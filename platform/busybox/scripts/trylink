@@ -1,0 +1,18 @@
+#!/bin/sh
+
+debug=false
+
+try() {
+    added="$1"
+    shift
+    $debug && echo "Trying: $* $added"
+    "$@" $added >busybox.map 2>busybox_ld.err \
+    && { rm busybox_ld.err; exit 0; }
+}
+
+try "" "$@"
+try "-lm" "$@"
+try "-lcrypt" "$@"
+try "-Wl,--start-group -lcrypt -lm -Wl,--end-group" "$@"
+# It failed. Let people see the error messages
+cat busybox_ld.err

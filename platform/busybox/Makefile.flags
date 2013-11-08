@@ -1,0 +1,74 @@
+# ==========================================================================
+# Build system
+# ==========================================================================
+
+BB_VER = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+
+# -std=gnu99 needed for [U]LLONG_MAX on some systems
+CPPFLAGS += $(call cc-option,-std=gnu99,)
+
+CPPFLAGS += \
+	-Iinclude -Ilibbb \
+	$(if $(KBUILD_SRC),-Iinclude2 -I$(srctree)/include) -I$(srctree)/libbb \
+	-include include/autoconf.h \
+	-D_GNU_SOURCE -DNDEBUG \
+	$(if $(CONFIG_LFS),-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64) \
+	-D"BB_VER=KBUILD_STR($(BB_VER))" -DBB_BT=AUTOCONF_TIMESTAMP
+
+# flag checks are grouped together to speed the checks up a bit..
+#CFLAGS += $(call cc-option,-Wall -Wshadow -Wwrite-strings,)
+CFLAGS += $(call cc-option,-Wshadow -Wwrite-strings,)
+CFLAGS += $(call cc-option,-Wundef -Wstrict-prototypes,)
+# If you want to add "-Wmissing-prototypes -Wmissing-declarations" above
+# (or anything else for that matter) make sure that it is still possible
+# to build bbox without warnings. Current offender: find.c:alloc_action().
+# Looks more like gcc bug: gcc will warn on it with or without prototype.
+# But still, warning-free compile is a must, or else we will drown
+# in warnings pretty soon.
+
+ifeq ($(CONFIG_WERROR),y)
+CFLAGS += $(call cc-option,-Werror,)
+endif
+# gcc 3.x emits bogus "old style proto" warning on find.c:alloc_action()
+CFLAGS += $(call cc-ifversion, -ge, 0400, -Wold-style-definition)
+
+# gcc emits bogus "no prev proto" warning on find.c:alloc_action()
+ifneq ($(CONFIG_WERROR),y)
+#CFLAGS += $(call cc-option,-Wmissing-prototypes -Wmissing-declarations,)
+endif
+
+CFLAGS += $(call cc-option,-Os -fno-builtin-strlen -finline-limit=0 -fomit-frame-pointer -ffunction-sections -fdata-sections,)
+# -fno-guess-branch-probability: prohibit pseudo-random guessing
+# of branch probabilities (hopefully makes bloatcheck more stable):
+CFLAGS += $(call cc-option,-fno-guess-branch-probability,)
+CFLAGS += $(call cc-option,-funsigned-char -static-libgcc,)
+CFLAGS += $(call cc-option,-falign-functions=1 -falign-jumps=1 -falign-labels=1 -falign-loops=1,)
+
+# FIXME: These warnings are at least partially to be concerned about and should
+# be fixed..
+#CFLAGS+=$(call cc-option,-Wconversion,)
+
+ifeq ($(CONFIG_DEBUG),y)
+CFLAGS += $(call cc-option,-g)
+endif
+
+ifeq ($(CONFIG_STATIC),y)
+LDFLAGS += -static
+endif
+
+ifeq ($(CONFIG_SELINUX),y)
+LDLIBS += -lselinux -lsepol
+endif
+
+ifeq ($(CONFIG_EFENCE),y)
+LDLIBS += -lefence
+endif
+
+ifeq ($(CONFIG_DMALLOC),y)
+LDLIBS += -ldmalloc
+endif
+
+#LDFLAGS += -nostdlib
+
+# Busybox is a stack-fatty so make sure we increase default size
+FLTFLAGS += -s 20000
