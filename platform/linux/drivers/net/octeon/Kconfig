@@ -1,0 +1,60 @@
+config OCTEON_MGMT_ETHERNET
+	tristate "Octeon Management port ethernet driver (CN5XXX, CN6XXX)"
+	depends on  CPU_CAVIUM_OCTEON
+	select PHYLIB
+	select MDIO_OCTEON
+	default y
+	help
+	  This option enables the ethernet driver for the management
+	  port on Cavium Networks' Octeon CN57XX, CN56XX, CN55XX,
+	  CN54XX, CN52XX, and CN6XXX chips.
+
+config OCTEON_NUM_PACKET_BUFFERS
+	int "Number of packet buffers (and work queue entries) for the Ethernet driver"
+	range 0 8192
+	depends on OCTEON_ETHERNET
+	default "1024"
+	help
+	  Number of packet buffers (and work queue entries) to allocate for
+	  the ethernet driver. Zero is treated as 1024.
+
+config OCTEON_POW_ONLY_ETHERNET
+        tristate "POW based internal only ethernet driver"
+	depends on  CPU_CAVIUM_OCTEON
+	depends on  OCTEON_ETHERNET
+        help
+          This option enables a very simple ethernet driver for internal core
+          to core traffic. It relies on another driver, octeon-ethernet,
+          to perform all hardware setup. This driver's purpose is to supply
+          basic networking between different Linux images running on the same
+          chip. A single core loads the octeon-ethernet module, all other cores
+          load this driver. On load, the driver waits for some other core to
+          perform hardware setup.
+
+
+config OCTEON_ETHERNET
+	tristate "Cavium Networks Octeon Ethernet support"
+	depends on CPU_CAVIUM_OCTEON
+	select PHYLIB
+	select MDIO_OCTEON
+	help
+	  This driver supports the builtin ethernet ports on Cavium
+	  Networks' products in the Octeon family. This driver supports the
+	  CN3XXX, CN5XXX and CN6XXX Octeon processors.
+
+	  To compile this driver as a module, choose M here.  The module
+	  will be called octeon-ethernet.
+
+
+choice
+	prompt "Lockless operations in ethernet driver"
+	default OCTEON_ETHERNET_LOCKLESS_IF_SUPPORTED
+	depends on OCTEON_ETHERNET
+
+config OCTEON_ETHERNET_LOCKLESS_IF_SUPPORTED
+	bool "Lockless if supported"
+
+config OCTEON_ETHERNET_LOCKED
+	bool "Locked operation"
+
+endchoice

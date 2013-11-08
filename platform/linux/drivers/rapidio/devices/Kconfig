@@ -1,0 +1,11 @@
+#
+# RapidIO devices configuration
+#
+config RAPIDIO_CN6XXX
+	tristate "Cavium Networks CN6XXX processors"
+	default m
+	depends on RAPIDIO
+	---help---
+	  Includes support for Cavium Networks CN6XXX family of serial RapidIO
+	  devices.
+

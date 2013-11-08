@@ -1,0 +1,309 @@
+config CAVIUM_OCTEON2
+	bool "Build the kernel to be used only on OCTEON II processor cores"
+	depends on CPU_CAVIUM_OCTEON
+	default "n"
+	help
+	  This option enables the generation of Octeon2 specific
+	  instructions by the compiler, resulting in a kernel that is
+	  more efficient, but that will not run on Octeon and
+	  OcteonPlus processor cores.
+
+
+config CAVIUM_OCTEON_CHK_CVMX_PARAMETER
+	bool "Build the kernel using -DCVMX_ENABLE_PARAMETER_CHECKING=1"
+	depends on CPU_CAVIUM_OCTEON
+	default "n"
+	help
+	  Compile the kernel with CVMX parameter checking enabled.
+	  This might catch some programming errors, but will result in
+	  a slower kernel.
+	
+config CAVIUM_OCTEON_CHK_CVMX_ADDRESS
+	bool "Build the kernel using -DCVMX_ENABLE_CSR_ADDRESS_CHECKING=1"
+	depends on CPU_CAVIUM_OCTEON
+	default "n"
+	help
+	  Compile the kernel with CVMX CSR address checking enabled.
+	  This might catch some programming errors, but will result in
+	  a slower kernel.
+	
+config CAVIUM_OCTEON_CHK_CVMX_POW
+	bool "Build the kernel using -DCVMX_ENABLE_POW_CHECKS=1"
+	depends on CPU_CAVIUM_OCTEON
+	default "n"
+	help
+	  Compile the kernel with CVMX CSR POW checking enabled.
+	  This might catch some programming errors, but will result in
+	  a slower kernel.
+	
+config CAVIUM_OCTEON_2ND_KERNEL
+	bool "Build the kernel to be used as a 2nd kernel on the same chip"
+	depends on CPU_CAVIUM_OCTEON
+	default "n"
+	help
+	  This option configures this kernel to be linked at a different
+	  address and use the 2nd uart for output. This allows a kernel built
+	  with this option to be run at the same time as one built without this
+	  option.
+
+config CAVIUM_OCTEON_HW_FIX_UNALIGNED
+	bool "Enable hardware fixups of unaligned loads and stores"
+	depends on CPU_CAVIUM_OCTEON
+	default "y"
+	help
+	  Configure the Octeon hardware to automatically fix unaligned loads
+	  and stores. Normally unaligned accesses are fixed using a kernel
+	  exception handler. This option enables the hardware automatic fixups,
+	  which requires only an extra 3 cycles. Disable this option if you
+	  are running code that relies on address exceptions on unaligned
+	  accesses.
+
+config CAVIUM_OCTEON_CVMSEG_SIZE
+	int "Number of L1 cache lines reserved for CVMSEG memory"
+	depends on CPU_CAVIUM_OCTEON
+	range 0 54
+	default 1
+	help
+	  CVMSEG LM is a segment that accesses portions of the dcache as a
+	  local memory; the larger CVMSEG is, the smaller the cache is.
+	  This selects the size of CVMSEG LM, which is in cache blocks. The
+	  legally range is from zero to 54 cache blocks (i.e. CVMSEG LM is
+	  between zero and 6192 bytes).
+
+	  For Mips, performance-critical kernel routines (like the TLB
+	  miss handlers) can normally only use registers K0 and K1
+	  ($26 and $27) from the main register file. If this option is
+	  set to a value greater than zero, the kernel allocates space
+	  in CVMSEG LM for use as a scratch register. This can make
+	  the kernel routines run faster. A side effect of this is
+	  that the kernel will clobber the top 16 bytes in CVMSEG LM
+	  space.  Consequently those locations are not available to
+	  user applications.
+
+config FAST_ACCESS_TO_THREAD_POINTER
+	bool "Enable fast access to the thread pointer"
+	depends on CPU_CAVIUM_OCTEON
+	default "y"
+	help
+	  For Mips, normally the TLS thread pointer is accessed by the
+	  userspace program executing a "rdhwr" from register $29. This
+	  register doesn't exist, so the kernel emulates the instruction
+	  assigning the thread pointer to the value register. This option
+	  supplies an alternate, faster access to the thread pointer. A
+	  side effect of this option is that the highest 8 bytes of CVMSEG
+	  is used by the kernel to save and restore the thread pointer during
+	  the TLB fault handlers. This CVMSEG address isn't available to user
+	  applications.
+
+config REPLACE_EMULATED_ACCESS_TO_THREAD_POINTER
+	bool "Support dynamically replacing emulated thread pointer accesses"
+	depends on FAST_ACCESS_TO_THREAD_POINTER
+	default "y"
+	help
+	  When this option is set, the kernel can dynamically replace
+	  slower references to the thread pointer with fast
+	  accesses. This involves replacing userspace instructions at
+	  runtime, so it may not work with all programs. It is advised
+	  to use a toolchain that creates code for
+	  FAST_ACCESS_TO_THREAD_POINTER instead of this option. If you
+	  have code compiled with a Cavium compiler prior to release
+	  1.5, or are using a non Cavium compiler, this option may
+	  allow you to receive most of the benefit of direct access to
+	  the thread pointer. It may also cause programs to fail.
+
+	  Instruction replacement is disabled on boot. It can be
+	  controlled by writing a mode to
+	  /sys/module/traps/parameters/thread_pointer_mode.  The
+	  supported modes are:
+
+	  0 - Use the normal kernel emulation without any changes.
+	  1 - Replace emulated instructions with direct accesses to the thread
+		register.
+	  2 - Replace emulated instructions and log the replacement PC.
+	  3 - Replace emulated instructions with break instructions. This will
+		cause programs to fail, but makes it easy to stop gdb on the
+		instruction.
+
+config CAVIUM_OCTEON_LOCK_L2
+	bool "Lock often used kernel code in the L2"
+	depends on CPU_CAVIUM_OCTEON
+	default "y"
+	help
+	  Enable locking parts of the kernel into the L2 cache.
+
+config CAVIUM_OCTEON_LOCK_L2_TLB
+	bool "Lock the TLB handler in L2"
+	depends on CAVIUM_OCTEON_LOCK_L2
+	default "y"
+	help
+	  Lock the low level TLB fast path into L2.
+
+config CAVIUM_OCTEON_LOCK_L2_EXCEPTION
+	bool "Lock the exception handler in L2"
+	depends on CAVIUM_OCTEON_LOCK_L2
+	default "y"
+	help
+	  Lock the low level exception handler into L2.
+
+config CAVIUM_OCTEON_LOCK_L2_LOW_LEVEL_INTERRUPT
+	bool "Lock the interrupt handler in L2"
+	depends on CAVIUM_OCTEON_LOCK_L2
+	default "y"
+	help
+	  Lock the low level interrupt handler into L2.
+
+config CAVIUM_OCTEON_LOCK_L2_INTERRUPT
+	bool "Lock the 2nd level interrupt handler in L2"
+	depends on CAVIUM_OCTEON_LOCK_L2
+	default "y"
+	help
+	  Lock the 2nd level interrupt handler in L2.
+
+config CAVIUM_OCTEON_LOCK_L2_MEMCPY
+	bool "Lock memcpy() in L2"
+	depends on CAVIUM_OCTEON_LOCK_L2
+	default "y"
+	help
+	  Lock the kernel's implementation of memcpy() into L2.
+
+choice
+	prompt "Allow User space to access hardware IO directly"
+	default CAVIUM_OCTEON_USER_IO
+	depends on CPU_CAVIUM_OCTEON
+
+config CAVIUM_OCTEON_USER_IO
+	bool "Allowed"
+	depends on CPU_CAVIUM_OCTEON
+	help
+	  Allows user applications to directly access the Octeon hardware
+	  IO addresses (0x1000000000000 - 0x1ffffffffffff). This allows high
+	  performance networking applications to run in user space with minimal
+	  performance penalties. This also means a user application can bring
+	  down the entire system. Only use this option on embedded devices
+	  where all user applications are strictly controlled.
+
+config CAVIUM_OCTEON_USER_IO_PER_PROCESS
+	bool "Per process"
+	help
+	  Allows user applications to use XKPHYS addresses directly to IO.
+	  This option dynamically enable/disable with sysmips syscall,
+	  by a process with root privilege. Without root privilege you can 
+	  only remove access.
+
+config CAVIUM_OCTEON_USER_IO_DISABLED
+	bool "Disabled"
+
+endchoice
+
+choice
+	prompt "Allow User space to access memory directly"
+	default OCTEON_USER_MEM
+	depends on CPU_CAVIUM_OCTEON
+
+config CAVIUM_OCTEON_USER_MEM
+	bool "Allowed"
+	help
+	  Allows user applications to use XKPHYS addresses directly to memory.
+	  This allows user space direct access to shared memory not in use by
+	  Linux. This memory is suitable for use with the Octeon hardware.
+	  Cavium simple executive applications also share this memory. Since
+	  this bypass all of the Linux memory protection, only use this option
+	  on embedded devices where all user applications are strictly
+	  controlled.
+
+config CAVIUM_OCTEON_USER_MEM_PER_PROCESS
+	bool "Per process"
+	help
+	  Allows user applications to use XKPHYS addresses directly to memory.
+	  This option dynamically enable/disable with sysmips syscall,
+	  by a process with root privilege. Without root privilege you can only
+	  remove access.
+
+config CAVIUM_OCTEON_USER_MEM_DISABLED
+	bool "Disabled"
+
+endchoice
+
+config CAVIUM_RESERVE32
+	int "Memory to reserve for user processes shared region (MB)"
+	range 0 1536
+	depends on CPU_CAVIUM_OCTEON
+	default "0"
+	help
+	  Reserve a shared memory region for user processes to use for hardware
+	  memory buffers. This is required for 32bit applications to be able to
+	  send and receive packets directly. Applications access this memory by
+	  memory mapping /dev/mem for the addresses in /proc/octeon_info. For
+	  optimal performance with HugeTLBs, keep this size an even number of
+	  megabytes.
+
+config ARCH_SPARSEMEM_ENABLE
+	def_bool y
+	select SPARSEMEM_STATIC
+	depends on CPU_CAVIUM_OCTEON
+
+config CAVIUM_OCTEON_WATCHDOG
+	tristate "Octeon watchdog driver"
+	depends on CPU_CAVIUM_OCTEON && !CAVIUM_OCTEON_2ND_KERNEL
+	default y
+	select EXPORT_UASM if CAVIUM_OCTEON_WATCHDOG = m
+	help
+	  This option enables a watchdog driver for all cores running Linux. It
+	  installs a NMI handler and pokes the watchdog based on an interrupt.
+	  On first expiration of the watchdog, the interrupt handler pokes it.
+	  The second expiration causes an NMI that prints a message and resets
+	  the chip. The third expiration causes a global soft reset.
+
+config CAVIUM_OCTEON_TRA
+	tristate "Octeon trace buffer (TRA) driver"
+	depends on CPU_CAVIUM_OCTEON && !CAVIUM_OCTEON2
+	default n
+	help
+	  This option enables a driver for the Octeon trace buffer. By default
+	  it enables interrupts on some illegal memory accesses. See
+	  octeon-tra.c for information on customizing this driver to find
+	  specific problems.
+
+config CAVIUM_OCTEON_NAND
+	tristate "Octeon NAND driver"
+	depends on MTD_NAND && CPU_CAVIUM_OCTEON
+	default m
+	help
+	  This option enables a MTD driver for the NAND controller introduced
+	  in the Octeon CN52XX pass 2 processor. It supports up to 8 NAND
+	  devices connected directly to Octeon's boot bus.
+
+config CAVIUM_OCTEON_RAPIDIO
+	bool "Enable support for Octeon Serial Rapid IO"
+	depends on CPU_CAVIUM_OCTEON
+	default y
+	select RAPIDIO
+	help
+	  Connect the SRIO interfaces available in the Octeon II series of
+	  processors to the kernel's RapidIO subsystem. The existence of the
+	  SRIO ports is automatically detected and configured as either a
+	  host or device. Bus enumeration will be performed on host interfaces
+	  as appropriate. After configuring this option, you will likely want
+	  to enable the RapidIO network adapter under the devices menu.
+
+config RAPIDIO
+	bool
+	default n
+
+source "drivers/rapidio/Kconfig"
+
+config CAVIUM_DECODE_RSL
+	bool "Decode RSL interrupt conditions."
+	depends on CPU_CAVIUM_OCTEON
+	default y
+	help
+	  Detect, decode and display on-chip error conditions.
+
+config DISABLE_ELF_NOTE_HEADER
+	bool "Disable the creation of the ELF PT_NOTE program header in vmlinux"
+	depends on CPU_CAVIUM_OCTEON
+	default y
+	help
+	  Some early Octeon bootloaders cannot process PT_NOTE program
+	  headers.  Select y to omit these headers so that the kernel
+	  can be loaded with older bootloaders.

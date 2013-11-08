@@ -1,0 +1,113 @@
+/*************************************************************************
+*
+* Author: Cavium Networks info@caviumnetworks.com
+*
+* Copyright (c) 2010  Cavium Networks (support@cavium.com). All rights
+* reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are
+* met:
+*
+*     * Redistributions of source code must retain the above copyright
+*       notice, this list of conditions and the following disclaimer.
+*
+*     * Redistributions in binary form must reproduce the above
+*       copyright notice, this list of conditions and the following
+*       disclaimer in the documentation and/or other materials provided
+*       with the distribution.
+*
+*     * Neither the name of Cavium Networks nor the names of
+*       its contributors may be used to endorse or promote products
+*       derived from this software without specific prior written
+*       permission.
+*
+* TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE SOFTWARE IS PROVIDED "AS IS"
+* AND WITH ALL FAULTS AND CAVIUM NETWORKS MAKES NO PROMISES, REPRESENTATIONS
+* OR WARRANTIES, EITHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, WITH
+* RESPECT TO THE SOFTWARE, INCLUDING ITS CONDITION, ITS CONFORMITY TO ANY
+* REPRESENTATION OR DESCRIPTION, OR THE EXISTENCE OF ANY LATENT OR PATENT
+* DEFECTS, AND CAVIUM SPECIFICALLY DISCLAIMS ALL IMPLIED (IF ANY) WARRANTIES
+* OF TITLE, MERCHANTABILITY, NONINFRINGEMENT, FITNESS FOR A PARTICULAR
+* PURPOSE, LACK OF VIRUSES, ACCURACY OR COMPLETENESS, QUIET ENJOYMENT, QUIET
+* POSSESSION OR CORRESPONDENCE TO DESCRIPTION.  THE ENTIRE RISK ARISING OUT
+* OF USE OR PERFORMANCE OF THE SOFTWARE LIES WITH YOU.
+*************************************************************************/
+
+/*
+ * Device specific IOCTL interface for the Cavium Octeon ethernet driver.
+ *
+ */
+#ifndef OCTEON_ETHERNET_USER_H
+#define OCTEON_ETHERNET_USER_H
+
+/*
+ * Each of these IOCTLs use the field "ifr_ifru.ifru_ivalue" inside
+ * "struct ifreq" to move data. When calling these IOCTLS, supply a
+ * "struct ifreq" as the third parameter. The second parameter will be
+ * one of the IOCTL numbers defined below.
+ */
+
+#define CAVIUM_NET_IOCTL_SETPRIO   (SIOCDEVPRIVATE + 0) /* Priority 0-3. Default is 0 */
+#define CAVIUM_NET_IOCTL_GETPRIO   (SIOCDEVPRIVATE + 1) /* Priority 0-3 */
+#define CAVIUM_NET_IOCTL_SETIDSIZE (SIOCDEVPRIVATE + 2) /* 0 = 8 bit, 1 = 16 bit IDs. Default is 1 */
+#define CAVIUM_NET_IOCTL_GETIDSIZE (SIOCDEVPRIVATE + 3) /* 0 = 8 bit, 1 = 16 bit IDs */
+#define CAVIUM_NET_IOCTL_SETSRCID  (SIOCDEVPRIVATE + 4) /* 0 = primary ID, 1 = secondary ID. Default is 0 */
+#define CAVIUM_NET_IOCTL_GETSRCID  (SIOCDEVPRIVATE + 5) /* 0 = primary ID, 1 = secondary ID */
+#define CAVIUM_NET_IOCTL_SETLETTER (SIOCDEVPRIVATE + 6) /* Letter code 0-3, or -1 for auto. Default is -1 */
+#define CAVIUM_NET_IOCTL_GETLETTER (SIOCDEVPRIVATE + 7) /* Letter code 0-3, or -1 for auto */
+
+#ifdef __KERNEL__
+
+/**
+ * enum cvm_oct_callback_result -  Return codes for the Ethernet* driver intercept callback.
+ *
+ * Depending on the return code, the ethernet driver will continue
+ * processing in different ways.
+ */
+enum cvm_oct_callback_result {
+	CVM_OCT_PASS,               /**< The ethernet driver will pass the packet
+					to the kernel, just as if the intercept
+					callback didn't exist */
+	CVM_OCT_DROP,               /**< The ethernet driver will drop the packet,
+					cleaning of the work queue entry and the
+					skbuff */
+	CVM_OCT_TAKE_OWNERSHIP_WORK,/**< The intercept callback takes over
+					ownership of the work queue entry. It is
+					the responsibility of the callback to free
+					the work queue entry and all associated
+					packet buffers. The ethernet driver will
+					dispose of the skbuff without affecting the
+					work queue entry */
+	CVM_OCT_TAKE_OWNERSHIP_SKB  /**< The intercept callback takes over
+					ownership of the skbuff. The work queue
+					entry and packet buffer will be disposed of
+					in a way keeping the skbuff valid */
+};
+typedef enum cvm_oct_callback_result cvm_oct_callback_result_t;
+
+/**
+ * cvm_oct_callback_result_t -  Ethernet driver intercept callback hook type.
+ *
+ * The callback receives three parameters and returns a struct
+ * cvm_oct_callback_result code.
+ *
+ * The first parameter is the linux device for the ethernet port the
+ * packet came in on.
+ *
+ * The second parameter is the raw work queue entry from the hardware.
+ *
+ * The third parameter is the packet converted into a Linux skbuff.
+ */
+typedef cvm_oct_callback_result_t (*cvm_oct_callback_t)(struct net_device *dev,
+							void *work_queue_entry,
+							struct sk_buff *skb);
+
+extern struct net_device *cvm_oct_register_callback(const char *, cvm_oct_callback_t);
+
+extern int cvm_oct_transmit_qos(struct net_device *dev, void *work_queue_entry,
+			 int do_free, int qos);
+
+#endif /* __KERNEL__ */
+
+#endif
