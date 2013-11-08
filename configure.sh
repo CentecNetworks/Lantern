@@ -11,8 +11,7 @@ _V330_COMPILE_JOBS=1
 _V330_DEBUG=n
 _V330_VER=r
 _V330_OPEN_SOURCE=y
-CUR_ABS_PATH=`pwd`
-_V330_TOP_PATH=$(dirname $CUR_ABS_PATH)
+_V330_TOP_PATH=`pwd`
 _V330_OUT_PATH=$_V330_TOP_PATH/out
 _V330_OVS_PACKAGE=$_V330_OUT_PATH/open_vswitch.tar.gz
 _OVS_PKG_TMP_TOP_DIR=$_V330_OUT_PATH/ovs_package
@@ -79,8 +78,8 @@ echo "final image directory: $_V330_TOP_PATH/out"
 echo "-------------------------------------------------------------------------"
 
 # Export gcc/gdb path
-echo "Generate Makefile.env.inc under $_V330_TOP_PATH/system"
-cat > $_V330_TOP_PATH/system/Makefile.env.inc <<EOF
+echo "Generate Makefile.env.inc under $_V330_TOP_PATH/"
+cat > $_V330_TOP_PATH/Makefile.env.inc <<EOF
 # Export environment to makefile
 export PATH=$_V330_TOOLCHAIN_PATH/bin:$PATH
 export _V330_TOOLCHAIN_PATH=$_V330_TOOLCHAIN_PATH
@@ -92,10 +91,10 @@ export _V330_TOP_PATH=$_V330_TOP_PATH
 export _V330_OPEN_SOURCE=$_V330_OPEN_SOURCE
 
 export _OVS_BIN_DIR=$_V330_OUT_PATH/build.octeon.$_V330_VER/bin.linux-board
-export _OVS_SRC_DIR=$_V330_TOP_PATH/system/ovs
-export _OVS_CFG_DIR=$_V330_TOP_PATH/system/build/cfg
-export _OVS_DEBIAN_CFG_DIR=$_V330_TOP_PATH/system/debian/config
-export _OVS_PREBUILT=$_V330_TOP_PATH/system/prebuilt
+export _OVS_SRC_DIR=$_V330_TOP_PATH/ovs
+export _OVS_CFG_DIR=$_V330_TOP_PATH/build/cfg
+export _OVS_DEBIAN_CFG_DIR=$_V330_TOP_PATH/debian/config
+export _OVS_PREBUILT=$_V330_TOP_PATH/prebuilt
 export _OVS_PACKAGE=$_V330_OVS_PACKAGE
 export _OVS_PKG_TMP_TOP_DIR=$_OVS_PKG_TMP_TOP_DIR
 export _OVS_TMP_DIR=$_OVS_PKG_TMP_TOP_DIR/open_vswitch

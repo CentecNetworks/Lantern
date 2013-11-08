@@ -2,12 +2,12 @@ include Makefile.env.inc
 
 # Setup makefile variable according to the environment configuration of configure.sh
 ifndef _V330_TOP_PATH
-_V330_TOP_PATH=$(shell pwd)/..
+_V330_TOP_PATH=$(shell pwd)
 endif
 
 export ROOT_DIR=$(_V330_TOP_PATH)
-export PLAT_TOP_DIR=$(ROOT_DIR)/system/platform
-export TOP_DIR=$(ROOT_DIR)/system
+export PLAT_TOP_DIR=$(ROOT_DIR)/platform
+export TOP_DIR=$(ROOT_DIR)
 export OUT_DIR=$(ROOT_DIR)/out
 
 # Compile debug or release version (please use d or r)
@@ -188,7 +188,7 @@ clean: FORCE
 
 ovs_package: openflow FORCE
 	@./build/build_ovs_package.sh
-	
+
 clean_ovs_package: clean_openflow FORCE
 	rm -rf $(_OVS_PKG_TMP_TOP_DIR)
 

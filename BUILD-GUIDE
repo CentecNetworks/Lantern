@@ -29,7 +29,7 @@ Source code overview
 
 The source code tree is organized and listed below:
 
-    system  -
+    top   -
             | ARCH             architecture design document for openflow
             | CHANGES          change Logs
             | README.md        readme
@@ -71,7 +71,7 @@ basic Linux image:
         -j number, specify compile speed
         -d , _V330_DEBUG version
         
-2. Run make in the 'system' directory:
+2. Run make in the top directory:
 
         % make
         or
@@ -81,7 +81,7 @@ basic Linux image:
     
 Note:
     1. a pre-built image is prepared for user if you don't want to build the image yourself.
-        The pre-built image is located in 'system/prebuilt/image/VCOS-1.0.bin"
+        The pre-built image is located in 'prebuilt/image/VCOS-1.0.bin"
     2. By default, the root account is created in the pre-built image:
     
     user name: root
@@ -96,7 +96,8 @@ The Centec VCOS is able to boot from Debian Linux system rather than the basic L
  this gives user great flexibility to customize the switch operating system and able to 
  install/run your own software.
 A prepared Debian Linux rootfs (created by tool 'debootstrap' based on Debian 7.2) 
-is located in 'system/debian/rootfs.tar.gz', 
+is located in 'system/debian/rootfs.tar.gz' (Due to GitHub single file 100Mb limit, we put this
+file to dropbox, you can download it from https://www.dropbox.com/s/rx8ex9lve2fmafd/rootfs.tar.gz), 
 user need to untar the rootfs file into a USB storage (mounting on '/mnt/udisk' on the switch).
 
         % tar zxvf rootfs.tar.gz 
