@@ -1,0 +1,189 @@
+board=pizza_box
+ver=$(VER)
+ctcli=no
+imgtype=eb
+rootfs_dir=$(GLIBC_PATH)
+
+ctc_build_dir=$(OUT_DIR)/build.octeon.$(ver)
+kbuild_dir=$(OUT_DIR)/kbuild.octeon.$(ver)
+prebuilt_dir=$(TOP_DIR)/prebuilt
+cfg_dir=$(TOP_DIR)/build/cfg
+etc_dir=$(TOP_DIR)/build/cfg/etc
+debian_cfg_dir=$(TOP_DIR)/debian/config
+board=$(BOARD)
+ctc_build_bin_dir=$(OUT_DIR)/build.octeon.$(ver)/bin
+ctc_build_ovs_bin_dir=$(OUT_DIR)/build.octeon.$(ver)/bin.$(BOARD)
+ctc_build_lib_dir=$(OUT_DIR)/build.octeon.$(ver)/lib
+ctc_build_ovs_lib_dir=$(OUT_DIR)/build.octeon.$(ver)/lib.$(BOARD)
+ctc_ovs_src_dir=$(TOP_DIR)/ovs
+
+product_name="V330"
+
+pkg_list_file=$(OUT_DIR)/pkg_list
+
+# Use makefile define function to create multiple line variable,
+# this is goodway to support extending this list
+define FILE_LIST
+dir     /bin        755 0 0
+dir     /dev        755 0 0
+dir     /etc        755 0 0
+dir     /lib        755 0 0
+dir     /mnt        755 0 0
+dir     /mnt/flash  755 0 0
+dir     /proc       755 0 0
+dir     /root       755 0 0
+dir     /sbin       755 0 0
+dir     /sys        755 0 0
+dir     /tftpboot   777 0 0
+dir     /tmp        755 0 0
+dir     /tmp/cmd    755 0 0
+dir     /usr        755 0 0
+dir     /usr/bin    755 0 0
+dir     /usr/sbin   755 0 0
+dir     /usr/share  755 0 0
+dir     /usr/share/zoneinfo 755 0 0
+dir     /var            755 0 0
+dir     /var/lib        755 0 0
+dir     /var/lib/ntp    755 0 0
+dir     /var/log        755 0 0
+dir     /var/run        755 0 0
+dir     /var/empty      755 0 0
+dir     /etc/ssh        755 0 0
+dir     /etc/ssh/keys   700 0 0
+dir     /etc/ssl        755 0 0
+
+slink   /boot /mnt/flash/boot   755 0 0
+slink   /conf /mnt/flash/conf   755 0 0
+
+dir /centec_switch 755 0 0
+slink /centec_switch/etc /mnt/flash/conf 755 0 0
+
+nod     /dev/console 600 0 0 c 5 1
+nod     /dev/ttyS0 600 0 0 c 4 1
+
+file    /lib/ld-2.17.so $(rootfs_dir)/ld-2.17.so 755 0 0
+slink   /lib/ld.so.1 ld-2.17.so 755 0 0
+file    /lib/libc-2.17.so $(rootfs_dir)/libc-2.17.so 755 0 0
+slink   /lib/libc.so.6 libc-2.17.so 755 0 0
+file    /lib/libm-2.17.so $(rootfs_dir)/libm-2.17.so 755 0 0
+slink   /lib/libm.so.6 libm-2.17.so 755 0 0
+file    /lib/librt-2.17.so $(rootfs_dir)/librt-2.17.so 755 0 0
+slink   /lib/librt.so.1 librt-2.17.so 755 0 0
+file    /lib/libcrypt-2.17.so $(rootfs_dir)/libcrypt-2.17.so 755 0 0
+slink   /lib/libcrypt.so.1 libcrypt-2.17.so 755 0 0
+file    /lib/libutil-2.17.so $(rootfs_dir)/libutil-2.17.so 755 0 0
+slink   /lib/libutil.so.1 libutil-2.17.so 755 0 0
+file    /lib/libnsl-2.17.so $(rootfs_dir)/libnsl-2.17.so 755 0 0
+slink   /lib/libnsl.so.1 libnsl-2.17.so 755 0 0
+file    /lib/libnss_files-2.17.so $(rootfs_dir)/libnss_files-2.17.so 755 0 0
+slink   /lib/libnss_files.so.2 libnss_files-2.17.so 755 0 0
+file    /lib/libnss_dns-2.17.so $(rootfs_dir)/libnss_dns-2.17.so 755 0 0
+slink   /lib/libnss_dns.so.2 libnss_dns-2.17.so 755 0 0
+file    /lib/libresolv-2.17.so $(rootfs_dir)/libresolv-2.17.so 755 0 0
+slink   /lib/libresolv.so.2 libresolv-2.17.so 755 0 0
+file    /lib/libpthread-2.17.so $(rootfs_dir)/libpthread-2.17.so 755 0 0
+slink   /lib/libpthread.so.0 libpthread-2.17.so 755 0 0
+file    /lib/libthread_db-1.0.so $(rootfs_dir)/libthread_db-1.0.so 755 0 0
+slink   /lib/libthread_db.so.1 libthread_db-1.0.so 755 0 0
+file    /lib/libdl-2.17.so $(rootfs_dir)/libdl-2.17.so 755 0 0
+slink   /lib/libdl.so.2 libdl-2.17.so 755 0 0
+
+file    /bin/busybox $(ctc_build_dir)/../build.busybox.octeon.$(ver)/busybox 755 0 0
+slink   /bin/sh /bin/busybox 755 0 0
+slink   /bin/ash /bin/busybox 755 0 0
+slink   /bin/login /bin/busybox 755 0 0
+slink   /bin/init /bin/busybox 755 0 0
+file   /sbin/init $(debian_cfg_dir)/init.sh 755 0 0
+slink   /init /sbin/init 755 0 0
+slink   /sbin/mount /bin/busybox 755 0 0
+slink   /sbin/getty /bin/busybox 755 0 0
+slink   /etc/mtab /proc/mounts 755 0 0
+
+file	/usr/sbin/udisk_insert $(etc_dir)/udisk_insert 755 0 0
+file	/usr/sbin/udisk_remove $(etc_dir)/udisk_remove 755 0 0
+
+file    /etc/localtime      $(etc_dir)/UTC                      644 0 0
+file    /etc/inittab_sup    $(etc_dir)/octeon/inittab_sup              644 0 0
+file    /etc/inittab_lc     $(etc_dir)/octeon/inittab_lc               644 0 0
+file    /etc/termcap        $(etc_dir)/termcap                  644 0 0
+file    /etc/passwd         $(etc_dir)/passwd                   644 0 0
+file    /etc/group          $(etc_dir)/group                    644 0 0
+file    /etc/profile        $(etc_dir)/profile                  644 0 0
+file    /etc/services       $(etc_dir)/services                 644 0 0
+file    /etc/hosts          $(etc_dir)/hosts                    644 0 0
+file    /etc/resolv.conf    $(etc_dir)/resolv.conf              644 0 0
+file    /etc/nsswitch.conf  $(etc_dir)/nsswitch.conf            644 0 0
+file    /etc/mdev.conf      $(etc_dir)/mdev.conf                755 0 0
+file	/etc/fstab 	    $(etc_dir)/fstab 			755 0 0
+file    /usr/share/zoneinfo/zone.tab $(cfg_dir)/zone.tab 644 0 0
+file    /etc/rc.sysinit     $(etc_dir)/octeon/rc.sysinit               755 0 0
+file    /etc/ssl/openssl.cnf    $(etc_dir)/ssl/openssl.cnf        755 0 0
+
+#Create directories and files for image
+dir     /usr/local    755 0 0
+dir     /usr/local/openvswitch  755 0 0
+dir     /usr/local/openvswitch/bin  755 0 0
+dir     /usr/local/openvswitch/var  755 0 0
+dir     /usr/local/openvswitch/var/run  755 0 0
+dir     /usr/local/openvswitch/var/run/openvswitch  755 0 0
+dir     /usr/local/openvswitch/var/log  755 0 0
+dir     /usr/local/openvswitch/etc  755 0 0
+dir     /usr/local/openvswitch/etc/db  755 0 0
+dir     /usr/local/openvswitch/data  755 0 0
+
+file    /usr/local/openvswitch/etc/db/conf.db $(etc_dir)/../conf_v330.db 755 0 0
+file    /usr/local/openvswitch/etc/db/conf_v330.db $(etc_dir)/../conf_v330.db 755 0 0
+
+file    /usr/local/openvswitch/data/vswitch.ovsschema $(etc_dir)/../vswitch.ovsschema 644 0 0
+
+file    /etc/qt2x25_firmware_mdio.bin     $(etc_dir)/qt2x25_firmware_mdio.bin          755 0 0
+file    /etc/vsc8488_firmware_mdio.bin     $(etc_dir)/vsc8488_firmware_mdio.bin          755 0 0
+
+file    /lib/ctc_hw.ko $(prebuilt_dir)/bin/ctc_hw.ko 644 0 0
+file    /lib/ctc_asic_io.ko $(prebuilt_dir)/bin/ctc_asic_io.ko 644 0 0
+file    /lib/peth_km.ko $(prebuilt_dir)/bin/peth_km.ko 644 0 0
+file    /usr/bin/board_type_detect $(prebuilt_dir)/bin/board_type_detect 755 0 0
+
+dir     /etc/debian_cfg 755 0 0
+file    /etc/debian_cfg/inittab $(debian_cfg_dir)/inittab 644 0 0
+
+dir  /etc/datapath_profile 755 0 0
+file /etc/datapath_profile/datapath_cfg.txt $(etc_dir)/datapath_profile/datapath_cfg.txt 755 0 0
+file /etc/datapath_profile/e330_24t_V3.txt $(etc_dir)/datapath_profile/e330_24t_V3.txt 755 0 0
+file /etc/datapath_profile/e330_48s_ddr275m.txt $(etc_dir)/datapath_profile/e330_48s_ddr275m.txt 755 0 0
+file /etc/datapath_profile/e330_48s_V3.txt $(etc_dir)/datapath_profile/e330_48s_V3.txt 755 0 0
+file /etc/datapath_profile/e330_48t.txt $(etc_dir)/datapath_profile/e330_48t.txt 755 0 0
+file /etc/datapath_profile/e330_48t_V3.txt $(etc_dir)/datapath_profile/e330_48t_V3.txt 755 0 0
+
+file /usr/local/openvswitch/bin/etc/openvswitch/mem_profile.cfg $(cfg_dir)/mem_profile.cfg 755 0 0
+file /etc/mem_profile.cfg $(cfg_dir)/mem_profile.cfg 755 0 0
+file /root/chip_profile_4sfpp.cfg $(cfg_dir)/chip_profile_4sfpp.cfg 755 0 0
+file /root/chip_profile_2sfpp.cfg $(cfg_dir)/chip_profile_2sfpp.cfg 755 0 0
+
+#OVS binaries
+file /usr/local/openvswitch/bin/ovsdb-tool $(ctc_build_ovs_bin_dir)/ovsdb-tool 755 0 0
+file /usr/local/openvswitch/bin/ovsdb-server $(ctc_build_ovs_bin_dir)/ovsdb-server 755 0 0
+file /usr/local/openvswitch/bin/ovs-vsctl $(ctc_build_ovs_bin_dir)/ovs-vsctl 755 0 0
+file /usr/local/openvswitch/bin/ovs-ofctl $(ctc_build_ovs_bin_dir)/ovs-ofctl 755 0 0
+file /usr/local/openvswitch/bin/ovs-appctl $(ctc_build_ovs_bin_dir)/ovs-appctl 755 0 0
+file /usr/local/openvswitch/bin/ovs-pki  $(ctc_ovs_src_dir)/utilities/ovs-pki 755 0 0
+file /usr/local/openvswitch/bin/ovs-vswitchd $(ctc_build_ovs_bin_dir)/ovs-vswitchd 755 0 0
+
+endef
+
+export FILE_LIST
+gen_package_file_list: FORCE
+	@-rm -rf $(pkg_list_file)
+	@mkdir -p $(OUT_DIR)
+	@touch $(pkg_list_file)
+	@echo "$$FILE_LIST" > $(pkg_list_file)
+	@if [ $(_V330_OPEN_SOURCE) = 'n' ] ; then \
+	echo "file /usr/bin/vtysh $(ctc_build_ovs_bin_dir)/vtysh 755 0 0" >> $(pkg_list_file); \
+	fi;
+
+build_ramdisk: gen_package_file_list FORCE
+	@echo "Package binaries. please waiting...";
+	$(K_DIR)/usr/gen_init_cpio $(pkg_list_file) | lzma -f -9 - > $(K_DIR)/usr/initramfs_data.cpio.lzma
+	cp $(K_DIR)/usr/initramfs_data.cpio.lzma  $(K_DIR)/usr/initramfs_eb.lzma
+	lzma -d $(K_DIR)/usr/initramfs_eb.lzma
+	mv $(K_DIR)/usr/initramfs_eb $(K_DIR)/usr/initramfs_data.cpio

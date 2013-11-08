@@ -1,0 +1,13 @@
+v1.0 - 8 Nov 2013
+-----------------
+   - First release of Centec VCOS-1.0 for V330 52TX-RD
+   - Hardware/ASIC based flow matching and forwarding
+   - Support basic Openflow 1.0/1.3 features and integrate with Open vSwitch(OVS) 1.10.0
+    includes:
+    - Support Openflow protocol 1.0 / 1.3
+    - Support ovs tools: ovs-ofctl, ovs-vsctl, ovsdb-server, ovsdb-tool, ovs-appctl, ovs-pki
+    - Support flow matching fields:  in_port, dl_vlan, dl_vlan_pcp, dl_src, dl_dst, dl_type, nw_src, nw_dst, nw_proto, nw_tos, tp_src, tp_dst, icmp_code, icmp_type
+    - Support flow priority, cookie, idle_timeout and hard_timeout
+    - Support multiple actions: drop, output (physical port, all, in_port, controller, gre tunnel port), mod_vlan_id, push_vlan, strip_vlan, mod_dl_src, mod_dl_dst, set_tunnel_id, mod_nw_dst, mod_tp_dst
+    - Support GRE tunnel port
+    - Support boot from Debian Linux system (Debian Linux 7.2 rootfs is embedded) 

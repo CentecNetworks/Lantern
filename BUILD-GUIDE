@@ -1,0 +1,161 @@
+           How to Build and Install VCOS And OVS Package
+           =============================================
+
+This document describes how to build and install Centec Openflow Switching System 
+for hardware V330 52TX-RD.
+it includes 1. How to build basic Virtual Centec Operating System (VCOS) image 
+            2. How to install Debian Linux 
+            3. How to build and install Open vSwitch(OVS) package
+
+Build Requirements
+------------------
+
+To compile the VCOS distribution, you will need the following system and software:
+
+    - Linux host 2.6.X (x86) (If you want to build Debian Linux system yourself,
+      Ubuntu/Debian linux host is recommended)
+    - A make program, eg. GNU make
+    - The GNU Toolchain 4.7.3 (cross toolchain for MIPS)
+        We have tested with Sourcery CodeBench Lite 2013.05-66.
+        (https://sourcery.mentor.com/GNUToolchain/release2544)
+        You may refer to Mentor Graphics (www.mentor.com) for more details.
+    - Install the LZMA compression tool
+        We have tested with lzma 4.32.7.
+        (LZMA SDK which can be found from http://7-zip.org/sdk.html
+         lzma command line tool was written by Ville Koskinen.  http://tukaani.org/lzma/)
+
+Source code overview
+--------------------
+
+The source code tree is organized and listed below:
+
+    system  -
+            | ARCH             architecture design document for openflow
+            | CHANGES          change Logs
+            | README.md        readme
+            | configure.sh     configuration script
+            | BUILD-GUIDE      build and installation document
+            | LICENSE          license
+            | Makefile         makefile
+            | Makefile.package list all files that will be packaged into the image
+            + adapt            Centec adaptation layer source code for openflow
+            + debian           config files and prepared rootfs for installing Debian system
+            + docs             user guide, sdk document etc.
+            + include          global header files
+            + lib              libraries
+            + mk               common makefiles
+            + ovs              open vswitch(ovs) source code
+            + platform         linux and busybox source code
+            + prebuilt         pre-built binaries and libraries
+            + sdk              Centec SDK
+            + third_party      third-party header files
+    out     +                  output binaries and images will be put here after user built the system                      
+
+
+Building the basic VCOS image
+-----------------------------
+
+Once you have prepared the required building host, software and Centec VCOS distribution,
+you may follow the procedures below to build the 
+basic Linux image:
+
+1. Configure the building environment, run script: configure.sh under the source directory: 'system'
+
+        % chmod +x ./configure.sh 
+        % ./configure.sh -p /home/centec/mips/mips-2013.05
+        
+        Usage: ./configure.sh :
+        -p path, specify absolute path for toolchain
+        -g path, specify glibc path relative to the toolchain path (must be 32bit glibc, default is mips-linux-gnu/libc/lib)
+        -c prefix, specify crosscompile prefix(default is mips-linux-gnu-)
+        -j number, specify compile speed
+        -d , _V330_DEBUG version
+        
+2. Run make in the 'system' directory:
+
+        % make
+        or
+        % make all
+
+    On successful compilation, the final image will be named 'VCOS-1.0.bin', located in the 'out' directory.
+    
+Note:
+    1. a pre-built image is prepared for user if you don't want to build the image yourself.
+        The pre-built image is located in 'system/prebuilt/image/VCOS-1.0.bin"
+    2. By default, the root account is created in the pre-built image:
+    
+    user name: root
+    password : centec
+    
+
+
+Installing Debian Linux
+------------------------------------
+
+The Centec VCOS is able to boot from Debian Linux system rather than the basic Linux system,
+ this gives user great flexibility to customize the switch operating system and able to 
+ install/run your own software.
+A prepared Debian Linux rootfs (created by tool 'debootstrap' based on Debian 7.2) 
+is located in 'system/debian/rootfs.tar.gz', 
+user need to untar the rootfs file into a USB storage (mounting on '/mnt/udisk' on the switch).
+
+        % tar zxvf rootfs.tar.gz 
+        
+Note:
+    1. The file system of USB storage must be in ext3 format.
+    2. Files extracted from the rootfs file must be located in the root directory of USB storage.
+    3. If you want to start the Debian Linux from USB storage on switch, you need
+    to boot from basic Linux system first, and create a boot flag file 'debian_from_udisk' 
+    in on-board flash (mounting on '/mnt/flash'), then reboot.
+    eg.
+        % touch /mnt/flash/debian_from_udisk
+    
+    Please refer to V330 52TX-RD hardware installation guide for details of 
+    how to boot the system image.
+             
+    4. By default, we have created two accounts in the prepared Debian system package:
+
+    user name: root
+    password : centec
+    
+    user name: centec
+    password : centec
+
+
+Building and installing Open vSwitch(OVS) package
+-------------------------------------------------
+
+You may follow the procedures below to build Open vSwitch running on Debian system:
+
+1. Configure the building environment, run script: configure.sh under the source directory: 'system'
+    (You may skip this step if you have done it before)
+
+        % chmod +x ./configure.sh 
+        % ./configure.sh -p /home/centec/mips/mips-2013.05
+        
+        Usage: ./configure.sh :
+        -p path, specify absolute path for toolchain
+        -g path, specify glibc path relative to the toolchain path (must be 32bit glibc, default is mips-linux-gnu/libc/lib)
+        -c prefix, specify crosscompile prefix(default is mips-linux-gnu-)
+        -j number, specify compile speed
+        -d , _V330_DEBUG version
+        
+2. Run make in the 'system' directory:
+
+        % make ovs_package
+
+    On successful compilation, the ovs package will be named 'open_vswitch.tar.gz',
+    located in the 'out' directory.
+      
+3. To install the ovs package on Debian, you should copy the ovs package to the 
+    switch and boot from Debian system, then:
+    
+        Untar the ovs package in switch:
+        %  tar xzvf open_vswitch.tar.gz
+        Get into the directory of extracted package:
+        %  cd open_vswitch
+        Run the installation script:
+        %  ./install_ovs.sh
+        
+    On successful installation, the ovs tools will be installed in directory '/usr/local/openvswitch',
+    and ovs will be run automatically on next boot.
