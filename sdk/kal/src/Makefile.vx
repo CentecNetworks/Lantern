@@ -1,0 +1,19 @@
+all_targets = common vxworks
+
+all: $(all_targets) FORCE
+clean: $(addprefix clean_,$(all_targets)) FORCE
+
+common: FORCE
+	make -C $(SDK_DIR)/kal/src/common -f Makefile.vx
+
+clean_common: FORCE
+	make -C $(SDK_DIR)/kal/src/common -f Makefile.vx clean
+
+vxworks: FORCE
+	make -C $(SDK_DIR)/kal/src/vxworks -f Makefile.vx
+
+clean_vxworks: FORCE
+	make -C $(SDK_DIR)/kal/src/vxworks -f Makefile.vx clean
+
+.PHONY: FORCE
+FORCE:

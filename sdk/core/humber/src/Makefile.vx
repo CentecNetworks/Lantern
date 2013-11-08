@@ -1,0 +1,21 @@
+BLD_DIR=$(SDK_DIR)/build.$(CPU).$(VER)
+
+all_targets = api sys
+
+all: $(all_targets) FORCE
+clean: $(addprefix clean_,$(all_targets)) FORCE
+
+api: FORCE
+	make -C $(SDK_DIR)/core/humber/src/api -f Makefile.vx
+
+clean_api: FORCE
+	make -C $(SDK_DIR)/core/humber/src/api -f Makefile.vx clean
+
+sys: FORCE
+	make -C $(SDK_DIR)/core/humber/src/sys -f Makefile.vx
+
+clean_sys: FORCE
+	make -C $(SDK_DIR)/core/humber/src/sys -f Makefile.vx  clean
+
+.PHONY: FORCE
+FORCE:

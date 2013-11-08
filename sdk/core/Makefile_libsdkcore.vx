@@ -1,0 +1,115 @@
+BLD_DIR=$(SDK_DIR)/build.$(CPU).$(VER)
+LIB_DIR=$(BLD_DIR)/lib.$(BOARD)
+BIN_DIR=$(BLD_DIR)/bin.$(BOARD)
+HUMBER_OBJ_API_DIR=$(BLD_DIR)/obj.$(BOARD)/core/humber/src/api
+HUMBER_OBJ_SYS_DIR=$(BLD_DIR)/obj.$(BOARD)/core/humber/src/sys
+API_OBJ_DIR=$(BLD_DIR)/obj.$(BOARD)/core/api/src
+COMMON_OBJ_DIR=$(BLD_DIR)/obj.$(BOARD)/core/common/src
+
+include $(MK_DIR)/sys_vx.mk
+
+LIB = sdkcore
+
+LIBAPI = sdkcoreapi
+
+LIBSYS = sdkcoresys
+
+OBJS = $(wildcard $(HUMBER_OBJ_API_DIR)/aclqos/*.o) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/interface/*.o) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/interrupt/*.o) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/l2/*.o) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/l3/*.o) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/misc/*.o) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/nexthop/*.o) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/security/*.o) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/stats/*.o) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/usrid/*.o) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/vlan/*.o) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/oam/*.o) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/mpls/*.o) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/ptp/*.o) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/synce/*.o) \
+				$(wildcard $(GREATBELT_OBJ_API_DIR)/sgmac/*.o)
+
+
+OBJSSRC = $(wildcard $(HUMBER_OBJ_SYS_DIR)/aclqos/*.o) \
+                $(wildcard $(HUMBER_OBJ_SYS_DIR)/common/*.o) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/interface/*.o) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/interrupt/*.o) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/l2/*.o) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/l3/*.o) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/misc/*.o) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/nexthop/*.o) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/security/*.o) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/stats/*.o) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/usrid/*.o) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/vlan/*.o) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/oam/*.o) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/mpls/*.o) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/ptp/*.o) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/synce/*.o) \
+				$(wildcard $(GREATBELT_OBJ_SYS_DIR)/sgmac/*.o) \
+				$(wildcard $(API_OBJ_DIR)/*.o)   \
+				$(wildcard $(COMMON_OBJ_DIR)/*.o)
+
+DEPS = $(wildcard $(HUMBER_OBJ_API_DIR)/aclqos/*.d) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/interface/*.d) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/interrupt/*.d) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/l2/*.d) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/l3/*.d) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/misc/*.d) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/nexthop/*.d) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/security/*.d) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/stats/*.d) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/usrid/*.d) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/vlan/*.d) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/oam/*.d) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/mpls/*.d) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/ptp/*.d) \
+				$(wildcard $(HUMBER_OBJ_API_DIR)/synce/*.o) \
+				$(wildcard $(GREATBELT_OBJ_API_DIR)/sgmac/*.d) \
+                $(wildcard $(HUMBER_OBJ_SYS_DIR)/aclqos/*.d) \
+                $(wildcard $(HUMBER_OBJ_SYS_DIR)/common/*.d) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/interface/*.d) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/interrupt/*.d) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/l2/*.d) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/l3/*.d) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/misc/*.d) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/nexthop/*.d) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/security/*.d) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/stats/*.d) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/usrid/*.d) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/vlan/*.d) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/oam/*.d) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/mpls/*.d) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/ptp/*.d) \
+				$(wildcard $(HUMBER_OBJ_SYS_DIR)/synce/*.o) \
+				$(wildcard $(GREATBELT_OBJ_SYS_DIR)/sgmac/*.d) \
+				$(wildcard $(API_OBJ_DIR)/*.d)   \
+				$(wildcard $(COMMON_OBJ_DIR)/*.d)
+
+all: $(LIB_DIR)/lib$(LIB).a
+
+#$(LIB_DIR)/lib$(LIBAPI).a: $(OBJS)
+#	$(shell mkdir -p $(dir $@))
+#	echo "LIB => $(subst $(BLD_DIR),build.$(CPU).$(VER),$@)" && \
+#	rm -rf $@ && \
+#	$(CC) $(CFLAGS) -o  $@ $^
+#
+#$(LIB_DIR)/lib$(LIBSYS).a: $(OBJSSRC)
+#	$(shell mkdir -p $(dir $@))
+#	echo "LIB => $(subst $(BLD_DIR),build.$(CPU).$(VER),$@)" && \
+#	rm -rf $@ && \
+#	$(CC) $(CFLAGS) -o $@ $^
+
+$(LIB_DIR)/lib$(LIB).a: $(OBJS) $(OBJSSRC)
+	$(shell mkdir -p $(dir $@))
+	echo "LIB => $(subst $(BLD_DIR),build.$(CPU).$(VER),$@)" && \
+	rm -rf $@ && \
+	$(AR) cru $@ $^ && \
+	$(RANLIB) $@
+
+	
+.PHONY: clean
+clean:
+	rm -rf $(LIB_DIR)/lib$(LIB).a

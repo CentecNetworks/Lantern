@@ -1,0 +1,18 @@
+BLD_DIR=$(SDK_DIR)/build.$(CPU).$(VER)
+OBJ_DIR=$(BLD_DIR)/obj.$(BOARD)/core/common
+LIB_DIR=$(BLD_DIR)/lib.$(BOARD)
+BIN_DIR=$(BLD_DIR)/bin.$(BOARD)
+
+all_targets = src
+
+all: $(all_targets) FORCE
+clean: $(addprefix clean_,$(all_targets)) FORCE
+
+src: FORCE
+	make -C $(SDK_DIR)/core/common/src -f Makefile.vx
+
+clean_src: FORCE
+	make -C $(SDK_DIR)/core/common/src -f Makefile.vx clean
+
+.PHONY: FORCE
+FORCE:

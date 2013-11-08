@@ -1,0 +1,21 @@
+BLD_DIR=$(SDK_DIR)/build.$(CPU).$(VER)
+OBJ_DIR=$(BLD_DIR)/obj.$(BOARD)/kal
+LIB_DIR=$(BLD_DIR)/lib.$(BOARD)
+BIN_DIR=$(BLD_DIR)/bin.$(BOARD)
+
+LIB = kal
+OBJS = $(wildcard $(OBJ_DIR)/src/vxworks/*.o) $(wildcard $(OBJ_DIR)/src/common/*.o)
+DEPS = $(wildcard $(OBJ_DIR)/src/vxworks/*.d) $(wildcard $(OBJ_DIR)/src/common/*.d)
+
+$(LIB_DIR)/lib$(LIB).a: $(OBJS)
+	$(shell mkdir -p $(dir $@))
+	echo "LIB => $(subst $(BLD_DIR),build.$(CPU).$(VER),$@)" && \
+	rm -rf $@ && \
+	$(AR) cru $@ $^ && \
+	$(RANLIB) $@
+
+.PHONY: clean
+clean:
+	rm -rf $(LIB_DIR)/lib$(LIB).a
+
+

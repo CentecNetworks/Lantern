@@ -1,0 +1,109 @@
+################## Topo how each Mac in CTP connects with cmodel's port ###################
+# format: {valid,queue_type,eth_if_id}							  #
+# DUT1 TOPO (PE1 device)								  #
+# valid: TRUE or FALSE                                                                    #
+# queue_type: SIM_IPE_Q / SIM_FWD_Q / SIM_EPE_Q / SIM_OAM_Q / SIM_NETTX_Q / SIM_MAX_Q     #
+# eth_if_id: ethernet interface id                                                        #
+###################################### chip 0 #############################################
+[CHIP_NUM]=0
+# 48 network ports connect to CTP
+# chip0 mac 0-47
+{TRUE,SIM_IPE_Q,0}
+{TRUE,SIM_IPE_Q,1}
+{TRUE,SIM_IPE_Q,2}
+{TRUE,SIM_IPE_Q,3}
+{TRUE,SIM_IPE_Q,4}
+{TRUE,SIM_IPE_Q,5}
+{TRUE,SIM_IPE_Q,6}
+{TRUE,SIM_IPE_Q,7}
+
+{TRUE,SIM_IPE_Q,8}
+{TRUE,SIM_IPE_Q,9}
+
+NULL_MAC_NUM = 2
+
+{TRUE,SIM_IPE_Q,12}
+{TRUE,SIM_IPE_Q,13}
+{TRUE,SIM_IPE_Q,14}
+{TRUE,SIM_IPE_Q,15}
+{TRUE,SIM_IPE_Q,16}
+{TRUE,SIM_IPE_Q,17}
+{TRUE,SIM_IPE_Q,18}
+{TRUE,SIM_IPE_Q,19}
+{TRUE,SIM_IPE_Q,20}
+{TRUE,SIM_IPE_Q,21}
+{TRUE,SIM_IPE_Q,22}
+{TRUE,SIM_IPE_Q,23}
+{TRUE,SIM_IPE_Q,24}
+{TRUE,SIM_IPE_Q,25}
+{TRUE,SIM_IPE_Q,26}
+{TRUE,SIM_IPE_Q,27}
+{TRUE,SIM_IPE_Q,28}
+{TRUE,SIM_IPE_Q,29}
+{TRUE,SIM_IPE_Q,30}
+{TRUE,SIM_IPE_Q,31}
+{TRUE,SIM_IPE_Q,32}
+{TRUE,SIM_IPE_Q,33}
+{TRUE,SIM_IPE_Q,34}
+{TRUE,SIM_IPE_Q,35}
+{TRUE,SIM_IPE_Q,36}
+{TRUE,SIM_IPE_Q,37}
+{TRUE,SIM_IPE_Q,38}
+{TRUE,SIM_IPE_Q,39}
+{TRUE,SIM_IPE_Q,40}
+{TRUE,SIM_IPE_Q,41}
+{TRUE,SIM_IPE_Q,42}
+{TRUE,SIM_IPE_Q,43}
+{TRUE,SIM_IPE_Q,44}
+{TRUE,SIM_IPE_Q,45}
+{TRUE,SIM_IPE_Q,46}
+{TRUE,SIM_IPE_Q,47}
+
+############## chip0 10G Mac(48-51) ###########
+{TRUE,SIM_IPE_Q,48}
+{TRUE,SIM_IPE_Q,49}
+{TRUE,SIM_IPE_Q,50}
+{TRUE,SIM_IPE_Q,51}
+
+############## chip0 cpu mac ###############
+# chip0 mac 104
+NULL_MAC_NUM = 1
+{TRUE,SIM_FWD_Q,104}
+
+############################################### chip 1 #####################################
+[CHIP_NUM]=1
+
+############## No use Mac(0-48) ###########
+NULL_MAC_NUM = 38
+
+# chip1 mac 90-91
+# the network ports connect to DUT2
+{TRUE,SIM_IPE_Q,90}
+{TRUE,SIM_IPE_Q,91}
+# chip1 mac 92-99
+# the last 8 network ports connect to CTP
+{TRUE,SIM_IPE_Q,92}
+{TRUE,SIM_IPE_Q,93}
+{TRUE,SIM_IPE_Q,94}
+{TRUE,SIM_IPE_Q,95}
+{TRUE,SIM_IPE_Q,96}
+{TRUE,SIM_IPE_Q,97}
+{TRUE,SIM_IPE_Q,98}
+{TRUE,SIM_IPE_Q,99}
+
+# chip1 10G mac 100-103
+{TRUE,SIM_IPE_Q,100}
+{TRUE,SIM_IPE_Q,101}
+{TRUE,SIM_IPE_Q,102}
+{TRUE,SIM_IPE_Q,103}
+
+############## chip1 cpu mac ###############
+# chip1 mac 105
+NULL_MAC_NUM = 1
+{TRUE,SIM_FWD_Q,105}
+############################
+
+
+
+############## No use Mac(18-52) ###########
+#NULL_MAC_NUM = 35

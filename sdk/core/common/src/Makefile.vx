@@ -1,0 +1,36 @@
+BLD_DIR=$(SDK_DIR)/build.$(CPU).$(VER)
+OBJ_DIR=$(BLD_DIR)/obj.$(BOARD)/core/common/src
+LIB_DIR=$(BLD_DIR)/lib.$(BOARD)
+BIN_DIR=$(BLD_DIR)/bin.$(BOARD)
+
+include $(MK_DIR)/sys_vx.mk
+
+CPPFLAGS += -I$(SDK_DIR)/kal/include/
+CPPFLAGS += -I$(SDK_DIR)/core/api/include/
+CPPFLAGS += -I$(SDK_DIR)/core/common/include/
+CPPFLAGS += -I$(SDK_DIR)/core/humber/include/api/
+
+SRC =  $(wildcard *.c)
+OBJS = $(patsubst %.c,%.o,$(wildcard *.c))
+DEPS = $(patsubst %.c,%.d,$(wildcard *.c))
+
+all: $(OBJS)
+
+$(OBJS): %.o: %.c
+	$(shell mkdir -p $(OBJ_DIR))
+	@echo "CC  => $(subst $(BLD_DIR),build.$(CPU).$(VER),$@)" && \
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $(OBJ_DIR)/$@ $<
+
+$(OBJ_DIR)/$(DEPS): $(SRC)
+	$(shell mkdir -p $(dir $@))
+	@echo "CX  => $(subst $(BLD_DIR),build.$(CPU).$(VER),$(@:%.d=%.o))" && \
+	$(CC) $(CFLAGS) $(CPPFLAGS) -MM $<>$@
+
+
+#include $(OBJ_DIR)/$(DEPS)
+
+.PHONY: clean
+clean:
+	rm -rf $(OBJ_DIR)/$(OBJS) $(OBJ_DIR)/$(DEPS)
+
+CFLAGS += -Werror -Wall
