@@ -2,7 +2,7 @@
 
 
 ##Overview
-The Centec Openflow switching system is the open source software package for Centec V330 52TX-RD switch. 
+The Centec Openflow switching system: Lantern is the open source software package for Centec V330 52TX-RD switch. 
 
 The Centec V330 Series Switch is based on Centec's TransWarp series switching silicon and the mature ToR switch hardware, integrated with the open source Open vSwitch and Centec's SDK to provide a complete system solution. Taking advantages of V330's friendly interface and Openness, users can easily develop the customized SDN (Software Defined Network) solutions to realize various networking visualization.
 
@@ -49,13 +49,13 @@ Leveraging Centec's TransWarp Family of Ethernet Silicon, Centec's E series swit
 
 ##Contact us
    * Website: [http://www.centecnetworks.com] [1]
-   * Wiki: [https://github/centecnetworks/xxx/wiki] [2]
-   * Issue tracker: [https://github/centecnetworks/xxx/issues] [3]
+   * Wiki: [https://github.com/centecnetworks/lantern/wiki] [2]
+   * Issue tracker: [https://github.com/centecnetworks/lantern/issues] [3]
    * Support email: <support@centecnetworks.com>
    * Sales email: <sales@centecnetworks.com>
    * Weibo: [http://weibo.com/centec] [4]
 
 [1]: http://www.centecnetworks.com "Centec Networks Co., Ltd."
-[2]: https://github/centecnetworks/xxx/wiki "Project Wiki"
-[3]: https://github/centecnetworks/xxx/issues "Project Issues"
+[2]: https://github.com/centecnetworks/lantern/wiki "Lantern Project Wiki"
+[3]: https://github.com/centecnetworks/lantern/issues "Lantern Project Issues"
 [4]: http://weibo.com/centec "Centec Weibo"
