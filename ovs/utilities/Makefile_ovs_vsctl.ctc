@@ -1,0 +1,34 @@
+ifeq ($(targetbase),linux)
+
+include $(MK_DIR)/sys.mk
+
+SRCS = 	ovs-vsctl.c
+
+PROG = ovs-vsctl
+
+# Flags copied from ovs top-level makefile with -Wmissing-field-initializers -Wno-override-init 
+# removed because gcc 3.x not understood.
+CFLAGS += -Wall -Wno-sign-compare -Wpointer-arith -Wdeclaration-after-statement -Wformat-security -Wswitch-enum -Wstrict-aliasing -Wbad-function-cast -Wold-style-definition 
+CFLAGS += -Wstrict-prototypes -Wmissing-prototypes -Wunused-parameter
+CFLAGS += -D_OFP_CENTEC_ -D_OFP_SDK_ -DHAVE_CONFIG_H
+CFLAGS += -Werror
+
+CPPFLAGS += -I$(OVSROOT) -I$(OVSROOT)/include -I$(OVSROOT)/lib
+CPPFLAGS += -I$(TOP_DIR)/adapt/lib
+
+LD_LIBS = -L$(LIB_DIR) -lopenvswitch
+DEP_LIBS = $(LIB_DIR)/libofproto.a $(LIB_DIR)/libopenvswitch.a 
+DEP_LIBS += $(LIB_DIR)/libctclib.a $(LIB_DIR)/libsal.a $(LIB_DIR)/libkal.a $(LIB_DIR)/libafx.a
+# Linux generic libs.
+LD_LIBS += -lrt -lm
+# SSL libs.
+LD_LIBS += -L$(PRE_BUILT_LIB_DIR)
+LD_LIBS += -lssl -lcrypto
+LD_LIBS += -lctclib -lsal -lkal -lafx
+
+include $(MK_DIR)/prog.mk
+
+endif
+
+.PHONY: FORCE
+FORCE:

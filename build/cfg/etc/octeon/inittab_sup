@@ -1,0 +1,4 @@
+::sysinit:/etc/rc.sysinit
+::respawn:-/bin/sh
+#::respawn:-/usr/bin/vtysh
+::shutdown:/sbin/hwclock --systohc

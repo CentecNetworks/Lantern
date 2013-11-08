@@ -1,0 +1,449 @@
+AT_BANNER([OpenFlow actions])
+
+AT_SETUP([OpenFlow 1.0 action translation])
+AT_KEYWORDS([ofp-actions OF1.0])
+AT_DATA([test-data], [dnl
+# actions=LOCAL
+0000 0008 fffe 04d2
+
+# actions=CONTROLLER:1234
+0000 0008 fffd 04d2
+
+# actions=mod_vlan_vid:9
+0001 0008 0009 0000
+
+# actions=mod_vlan_pcp:6
+0002 0008 06 000000
+
+# actions=strip_vlan
+0003 0008 00000000
+
+# actions=mod_dl_src:00:11:22:33:44:55
+0004 0010 001122334455 000000000000
+
+# actions=mod_dl_dst:10:20:30:40:50:60
+0005 0010 102030405060 000000000000
+
+# actions=mod_nw_src:1.2.3.4
+0006 0008 01020304
+
+# actions=mod_nw_dst:192.168.0.1
+0007 0008 c0a80001
+
+# actions=mod_nw_tos:48
+0008 0008 30 000000
+
+# actions=mod_tp_src:80
+0009 0008 0050 0000
+
+# actions=mod_tp_dst:443
+000a 0008 01bb 0000
+
+# actions=enqueue:10q55
+000b 0010 000a 000000000000 00000037
+
+# actions=resubmit:5
+ffff 0010 00002320 0001 0005 00000000
+
+# actions=set_tunnel:0x12345678
+ffff 0010 00002320 0002 0000 12345678
+
+# actions=set_queue:2309737729
+ffff 0010 00002320 0004 0000 89abcd01
+
+# actions=pop_queue
+ffff 0010 00002320 0005 000000000000
+
+# actions=move:NXM_OF_IN_PORT[]->NXM_OF_VLAN_TCI[]
+ffff 0018 00002320 0006 0010 0000 0000 00000002 00000802
+
+# actions=load:0xf009->NXM_OF_VLAN_TCI[]
+ffff 0018 00002320 0007 000f 00000802 000000000000f009
+
+# actions=note:11.e9.9a.ad.67.f3
+ffff 0010 00002320 0008 11e99aad67f3
+
+# actions=set_tunnel64:0xc426384d49c53d60
+ffff 0018 00002320 0009 000000000000 c426384d49c53d60
+
+# actions=set_tunnel64:0x885f3298
+ffff 0018 00002320 0009 000000000000 00000000885f3298
+
+# actions=write_metadata:0xfedcba9876543210
+ffff 0020 00002320 0016 000000000000 fedcba9876543210 ffffffffffffffff
+
+# actions=write_metadata:0xfedcba9876543210/0xffff0000ffff0000
+ffff 0020 00002320 0016 000000000000 fedcba9876543210 ffff0000ffff0000
+
+# actions=multipath(eth_src,50,modulo_n,1,0,NXM_NX_REG0[])
+ffff 0020 00002320 000a 0000 0032 0000 0000 0000 0000 0000 0000 001f 00010004
+
+# actions=bundle(eth_src,0,hrw,ofport,slaves:4,8)
+ffff 0028 00002320 000c 0001 0000 0000 00000002 0002 0000 00000000 00000000 dnl
+0004 0008 00000000
+
+# actions=bundle_load(eth_src,0,hrw,ofport,NXM_NX_REG0[],slaves:4,8)
+ffff 0028 00002320 000d 0001 0000 0000 00000002 0002 001f 00010004 00000000 dnl
+0004 0008 00000000
+
+# actions=resubmit(10,5)
+ffff 0010 00002320 000e 000a 05 000000
+
+# actions=output:NXM_NX_REG1[5..10]
+ffff 0018 00002320 000f 0145 00010204 ffff 000000000000
+
+# actions=learn(table=2,idle_timeout=10,hard_timeout=20,fin_idle_timeout=2,fin_hard_timeout=4,priority=80,cookie=0x123456789abcdef0,NXM_OF_VLAN_TCI[0..11],NXM_OF_ETH_DST[]=NXM_OF_ETH_SRC[],output:NXM_OF_IN_PORT[])
+ffff 0048 00002320 0010 000a 0014 0050 123456789abcdef0 0000 02 00 0002 0004 dnl
+000c 00000802 0000 00000802 0000 dnl
+0030 00000406 0000 00000206 0000 dnl
+1010 00000002 0000 dnl
+00000000
+
+# actions=exit
+ffff 0010 00002320 0011 000000000000
+
+# actions=dec_ttl
+ffff 0010 00002320 0012 000000000000
+
+# actions=fin_timeout(idle_timeout=10,hard_timeout=20)
+ffff 0010 00002320 0013 000a 0014 0000
+
+# actions=controller(reason=invalid_ttl,max_len=1234,id=5678)
+ffff 0010 00002320 0014 04d2 162e 02 00
+
+# actions=dec_ttl(32768,12345,90,765,1024)
+ffff 0020 00002320 0015 000500000000 80003039005A02fd 0400000000000000
+
+])
+sed '/^[[#&]]/d' < test-data > input.txt
+sed -n 's/^# //p; /^$/p' < test-data > expout
+sed -n 's/^& //p' < test-data > experr
+AT_CAPTURE_FILE([input.txt])
+AT_CAPTURE_FILE([expout])
+AT_CAPTURE_FILE([experr])
+AT_CHECK(
+  [ovs-ofctl '-vPATTERN:console:%c|%p|%m' parse-ofp10-actions < input.txt],
+  [0], [expout], [experr])
+AT_CLEANUP
+
+AT_SETUP([OpenFlow 1.1 action translation])
+AT_KEYWORDS([ofp-actions OF1.1])
+AT_DATA([test-data], [dnl
+# actions=LOCAL
+0000 0010 fffffffe 04d2 000000000000
+
+# actions=CONTROLLER:1234
+0000 0010 fffffffd 04d2 000000000000
+
+# actions=mod_vlan_vid:9
+0001 0008 0009 0000
+
+# actions=mod_vlan_pcp:6
+0002 0008 06 000000
+
+# actions=mod_dl_src:00:11:22:33:44:55
+0003 0010 001122334455 000000000000
+
+# actions=mod_dl_dst:10:20:30:40:50:60
+0004 0010 102030405060 000000000000
+
+# actions=mod_nw_src:1.2.3.4
+0005 0008 01020304
+
+# actions=mod_nw_dst:192.168.0.1
+0006 0008 c0a80001
+
+# actions=mod_nw_tos:48
+0007 0008 30 000000
+
+# actions=mod_tp_src:80
+0009 0008 0050 0000
+
+# actions=mod_tp_dst:443
+000a 0008 01bb 0000
+
+# actions=strip_vlan
+0012 0008 00000000
+
+# actions=set_queue:2309737729
+0015 0008 89abcd01
+
+dnl 802.1ad isn't supported at the moment
+dnl # actions=push_vlan:0x88a8
+dnl 0011 0008 88a8 0000
+# actions=push_vlan:0x8100
+0011 0008 8100 0000
+
+# actions=resubmit:5
+ffff 0010 00002320 0001 0005 00000000
+
+# actions=set_tunnel:0x12345678
+ffff 0010 00002320 0002 0000 12345678
+
+# actions=pop_queue
+ffff 0010 00002320 0005 000000000000
+
+# actions=move:NXM_OF_IN_PORT[]->NXM_OF_VLAN_TCI[]
+ffff 0018 00002320 0006 0010 0000 0000 00000002 00000802
+
+# actions=load:0xf009->NXM_OF_VLAN_TCI[]
+ffff 0018 00002320 0007 000f 00000802 000000000000f009
+
+# actions=note:11.e9.9a.ad.67.f3
+ffff 0010 00002320 0008 11e99aad67f3
+
+# actions=set_tunnel64:0xc426384d49c53d60
+ffff 0018 00002320 0009 000000000000 c426384d49c53d60
+
+# actions=set_tunnel64:0x885f3298
+ffff 0018 00002320 0009 000000000000 00000000885f3298
+
+dnl OpenFlow 1.1 uses OFPIT_WRITE_METADATA to express the NXAST_WRITE_METADATA
+dnl action instead, so parse-ofp11-actions will recognise and drop this action.
+# actions=write_metadata:0xfedcba9876543210
+#  0: ff -> (none)
+#  1: ff -> (none)
+#  2: 00 -> (none)
+#  3: 20 -> (none)
+#  4: 00 -> (none)
+#  5: 00 -> (none)
+#  6: 23 -> (none)
+#  7: 20 -> (none)
+#  8: 00 -> (none)
+#  9: 16 -> (none)
+# 10: 00 -> (none)
+# 11: 00 -> (none)
+# 12: 00 -> (none)
+# 13: 00 -> (none)
+# 14: 00 -> (none)
+# 15: 00 -> (none)
+# 16: fe -> (none)
+# 17: dc -> (none)
+# 18: ba -> (none)
+# 19: 98 -> (none)
+# 20: 76 -> (none)
+# 21: 54 -> (none)
+# 22: 32 -> (none)
+# 23: 10 -> (none)
+# 24: ff -> (none)
+# 25: ff -> (none)
+# 26: ff -> (none)
+# 27: ff -> (none)
+# 28: ff -> (none)
+# 29: ff -> (none)
+# 30: ff -> (none)
+# 31: ff -> (none)
+ffff 0020 00002320 0016 000000000000 fedcba9876543210 ffffffffffffffff
+
+dnl Write-Metadata duplicated.
+& ofp_actions|WARN|duplicate write_metadata instruction not allowed, for OpenFlow 1.1+ compatibility
+# bad OF1.1 actions: OFPBAC_UNSUPPORTED_ORDER
+ffff 0020 00002320 0016 000000000000 fedcba9876543210 ffffffffffffffff ffff 0020 00002320 0016 000000000000 fedcba9876543210 ffffffffffffffff
+
+dnl Write-Metadata in wrong position.
+& ofp_actions|WARN|invalid instruction ordering: apply_actions must appear before write_metadata, for OpenFlow 1.1+ compatibility
+# bad OF1.1 actions: OFPBAC_UNSUPPORTED_ORDER
+ffff 0020 00002320 0016 000000000000 fedcba9876543210 ffffffffffffffff ffff 0010 00002320 0002 0000 12345678
+
+# actions=multipath(eth_src,50,modulo_n,1,0,NXM_NX_REG0[])
+ffff 0020 00002320 000a 0000 0032 0000 0000 0000 0000 0000 0000 001f 00010004
+
+# actions=bundle(eth_src,0,hrw,ofport,slaves:4,8)
+ffff 0028 00002320 000c 0001 0000 0000 00000002 0002 0000 00000000 00000000 dnl
+0004 0008 00000000
+
+# actions=bundle_load(eth_src,0,hrw,ofport,NXM_NX_REG0[],slaves:4,8)
+ffff 0028 00002320 000d 0001 0000 0000 00000002 0002 001f 00010004 00000000 dnl
+0004 0008 00000000
+
+# actions=resubmit(10,5)
+ffff 0010 00002320 000e 000a 05 000000
+
+# actions=output:NXM_NX_REG1[5..10]
+ffff 0018 00002320 000f 0145 00010204 ffff 000000000000
+
+# actions=learn(table=2,idle_timeout=10,hard_timeout=20,fin_idle_timeout=2,fin_hard_timeout=4,priority=80,cookie=0x123456789abcdef0,NXM_OF_VLAN_TCI[0..11],NXM_OF_ETH_DST[]=NXM_OF_ETH_SRC[],output:NXM_OF_IN_PORT[])
+ffff 0048 00002320 0010 000a 0014 0050 123456789abcdef0 0000 02 00 0002 0004 dnl
+000c 00000802 0000 00000802 0000 dnl
+0030 00000406 0000 00000206 0000 dnl
+1010 00000002 0000 dnl
+00000000
+
+# actions=exit
+ffff 0010 00002320 0011 000000000000
+
+dnl NXAST_DEC_TTL
+# actions=dec_ttl
+ffff 0010 00002320 0012 000000000000
+
+dnl OpenFlow 1.1 OFPAT_DEC_TTL
+# actions=dec_ttl
+0018 0008 00000000
+
+# actions=fin_timeout(idle_timeout=10,hard_timeout=20)
+ffff 0010 00002320 0013 000a 0014 0000
+
+# actions=controller(reason=invalid_ttl,max_len=1234,id=5678)
+ffff 0010 00002320 0014 04d2 162e 02 00
+
+# actions=dec_ttl(32768,12345,90,765,1024)
+ffff 0020 00002320 0015 000500000000 80003039005A02fd 0400000000000000
+
+])
+sed '/^[[#&]]/d' < test-data > input.txt
+sed -n 's/^# //p; /^$/p' < test-data > expout
+sed -n 's/^& //p' < test-data > experr
+AT_CAPTURE_FILE([input.txt])
+AT_CAPTURE_FILE([expout])
+AT_CAPTURE_FILE([experr])
+AT_CHECK(
+  [ovs-ofctl '-vPATTERN:console:%c|%p|%m' parse-ofp11-actions < input.txt],
+  [0], [expout], [experr])
+AT_CLEANUP
+
+AT_SETUP([OpenFlow 1.1 instruction translation])
+AT_KEYWORDS([OF1.1 instruction ofp-actions])
+AT_DATA([test-data], [dnl
+# actions=LOCAL
+0004 0018 00000000 dnl
+0000 0010 fffffffe 04d2 000000000000
+
+dnl Apply-Actions non-zero padding
+# actions=drop
+#  0: 00 -> (none)
+#  1: 04 -> (none)
+#  2: 00 -> (none)
+#  3: 08 -> (none)
+#  4: 00 -> (none)
+#  5: 00 -> (none)
+#  6: 00 -> (none)
+#  7: 01 -> (none)
+0004 0008 00000001
+
+dnl Check that an empty Apply-Actions instruction gets dropped.
+# actions=drop
+#  0: 00 -> (none)
+#  1: 04 -> (none)
+#  2: 00 -> (none)
+#  3: 08 -> (none)
+#  4: 00 -> (none)
+#  5: 00 -> (none)
+#  6: 00 -> (none)
+#  7: 00 -> (none)
+0004 0008 00000000
+
+dnl Duplicate instruction type:
+# bad OF1.1 instructions: OFPBAC_UNSUPPORTED_ORDER
+0004 0008 00000000 0004 0008 00000000
+
+dnl Instructions not multiple of 8 in length.
+& ofp_actions|WARN|OpenFlow message instructions length 9 is not a multiple of 8
+# bad OF1.1 instructions: OFPBIC_BAD_LEN
+0004 0009 01 00000000
+
+dnl Goto-Table instruction too long.
+# bad OF1.1 instructions: OFPBIC_BAD_LEN
+0001 0010 01 000000 0000000000000000
+
+dnl Goto-Table 1 instruction non-zero padding
+# actions=goto_table:1
+#  7: 01 -> 00
+0001 0008 01 000001
+
+dnl Goto-Table 1
+# actions=goto_table:1
+0001 0008 01 000000
+
+dnl Write-Metadata.
+# actions=write_metadata:0xfedcba9876543210
+0002 0018 00000000 fedcba9876543210 ffffffffffffffff
+
+dnl Write-Metadata with mask.
+# actions=write_metadata:0xfedcba9876543210/0xff00ff00ff00ff00
+0002 0018 00000000 fedcba9876543210 ff00ff00ff00ff00
+
+dnl Write-Metadata too short.
+# bad OF1.1 instructions: OFPBIC_BAD_LEN
+0002 0010 00000000 fedcba9876543210
+
+dnl Write-Metadata too long.
+# bad OF1.1 instructions: OFPBIC_BAD_LEN
+0002 0020 00000000 fedcba9876543210 ffffffffffffffff 0000000000000000
+
+dnl Write-Metadata duplicated.
+# bad OF1.1 instructions: OFPBAC_UNSUPPORTED_ORDER
+0002 0018 00000000 fedcba9876543210 ff00ff00ff00ff00 0002 0018 00000000 fedcba9876543210 ff00ff00ff00ff00
+
+dnl Write-Metadata in wrong position (OpenFlow 1.1+ disregards the order
+dnl and OVS reorders it to the canonical order)
+# actions=write_metadata:0xfedcba9876543210,goto_table:1
+#  1: 01 -> 02
+#  3: 08 -> 18
+#  4: 01 -> 00
+#  8: 00 -> fe
+#  9: 02 -> dc
+# 10: 00 -> ba
+# 11: 18 -> 98
+# 12: 00 -> 76
+# 13: 00 -> 54
+# 14: 00 -> 32
+# 15: 00 -> 10
+# 16: fe -> ff
+# 17: dc -> ff
+# 18: ba -> ff
+# 19: 98 -> ff
+# 20: 76 -> ff
+# 21: 54 -> ff
+# 22: 32 -> ff
+# 23: 10 -> ff
+# 24: ff -> 00
+# 25: ff -> 01
+# 26: ff -> 00
+# 27: ff -> 08
+# 28: ff -> 01
+# 29: ff -> 00
+# 30: ff -> 00
+# 31: ff -> 00
+0001 0008 01 000000 0002 0018 00000000 fedcba9876543210 ffffffffffffffff
+
+dnl Write-Actions not supported yet.
+# bad OF1.1 instructions: OFPBIC_UNSUP_INST
+0003 0008 01 000000
+
+dnl Clear-Actions too-long
+# bad OF1.1 instructions: OFPBIC_BAD_LEN
+0005 0010 00000000 0000000000000000
+
+dnl Clear-Actions non-zero padding
+# actions=clear_actions
+#  7: 01 -> 00
+0005 0008 00000001
+
+dnl Clear-Actions non-zero padding
+# actions=clear_actions
+#  4: 01 -> 00
+0005 0008 01 000000
+
+dnl Clear-Actions
+# actions=clear_actions
+0005 0008 00000000
+
+dnl Experimenter actions not supported yet.
+# bad OF1.1 instructions: OFPBIC_BAD_EXPERIMENTER
+ffff 0008 01 000000
+
+dnl Bad instruction number (0 not assigned).
+# bad OF1.1 instructions: OFPBIC_UNKNOWN_INST
+0000 0008 01 000000
+
+])
+sed '/^[[#&]]/d' < test-data > input.txt
+sed -n 's/^# //p; /^$/p' < test-data > expout
+sed -n 's/^& //p' < test-data > experr
+AT_CAPTURE_FILE([input.txt])
+AT_CAPTURE_FILE([expout])
+AT_CAPTURE_FILE([experr])
+AT_CHECK(
+  [ovs-ofctl '-vPATTERN:console:%c|%p|%m' parse-ofp11-instructions < input.txt],
+  [0], [expout], [experr])
+AT_CLEANUP

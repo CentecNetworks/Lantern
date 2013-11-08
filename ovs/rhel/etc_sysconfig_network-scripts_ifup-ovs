@@ -1,0 +1,97 @@
+#!/bin/bash
+
+# Copyright (c) 2011 Alexey I. Froloff.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at:
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+. /etc/init.d/functions
+
+cd /etc/sysconfig/network-scripts
+. ./network-functions
+
+[ -f ../network ] && . ../network
+
+CONFIG=${1}
+TIMEOUT=10
+
+need_config ${CONFIG}
+
+source_config
+
+OTHERSCRIPT="/etc/sysconfig/network-scripts/ifup-${REAL_DEVICETYPE}"
+
+if [ ! -x ${OTHERSCRIPT} ]; then
+	OTHERSCRIPT="/etc/sysconfig/network-scripts/ifup-eth"
+fi
+
+check_recursion()
+{
+	[ -n "${UPPEDSTACK}" ] && for _r in ${UPPEDSTACK}; do
+		[ "$_r" = "$1" ] && return 1
+	done
+
+	return 0
+}
+
+if [ -z "${UPPEDSTACK}" ]; then
+	UPPEDSTACK="${DEVICE}"
+fi
+
+[ -n "${OVSREQUIRES}" ] && for _i in ${OVSREQUIRES}; do
+	if ( check_recursion "$_i" ); then
+		UPPEDSTACK="${UPPEDSTACK} $_i" /sbin/ifup "$_i"
+	fi
+done
+
+[ -f /var/lock/subsys/openvswitch ] || /sbin/service openvswitch start
+
+case "$TYPE" in
+	OVSBridge)
+		ovs-vsctl -t ${TIMEOUT} -- --may-exist add-br "$DEVICE" $OVS_OPTIONS ${OVS_EXTRA+-- $OVS_EXTRA}
+		if [ "${OVSBOOTPROTO}" = "dhcp" ] && [ -n "${OVSINTF}" ]; then
+			case " ${OVSDHCPINTERFACES} " in
+				*" ${OVSINTF} "*)
+					BOOTPROTO=dhcp ${OTHERSCRIPT} ${CONFIG}
+				;;
+			esac
+		fi
+		if [ "${OVSBOOTPROTO}" != "dhcp" ] && [ -z "${OVSINTF}" ]; then
+			${OTHERSCRIPT} ${CONFIG}
+		fi
+		[ -n "${STP}" ] && ovs-vsctl --no-wait set bridge "${DEVICE}" stp_enable="${STP}"
+		;;
+	OVSPort)
+		/sbin/ifup "$OVS_BRIDGE"
+		${OTHERSCRIPT} ${CONFIG} ${2}
+		ovs-vsctl -t ${TIMEOUT} -- --may-exist add-port "$OVS_BRIDGE" "$DEVICE" $OVS_OPTIONS ${OVS_EXTRA+-- $OVS_EXTRA}
+		OVSINTF=${DEVICE} /sbin/ifup "$OVS_BRIDGE"
+		;;
+	OVSIntPort)
+		/sbin/ifup "$OVS_BRIDGE"
+		ovs-vsctl -t ${TIMEOUT} -- --may-exist add-port "$OVS_BRIDGE" "$DEVICE" $OVS_OPTIONS -- set Interface "$DEVICE" type=internal ${OVS_EXTRA+-- $OVS_EXTRA}
+		${OTHERSCRIPT} ${CONFIG} ${2}
+		;;
+	OVSBond)
+		/sbin/ifup "$OVS_BRIDGE"
+		for _iface in $BOND_IFACES; do
+			/sbin/ifup ${_iface}
+		done
+		ovs-vsctl -t ${TIMEOUT} -- --fake-iface add-bond "$OVS_BRIDGE" "$DEVICE" ${BOND_IFACES} $OVS_OPTIONS ${OVS_EXTRA+-- $OVS_EXTRA}
+		${OTHERSCRIPT} ${CONFIG} ${2}
+		OVSINTF=${DEVICE} /sbin/ifup "$OVS_BRIDGE"
+		;;
+	*)
+		echo $"Invalid OVS interface type $TYPE"
+		exit 1
+		;;
+esac

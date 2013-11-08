@@ -1,0 +1,7 @@
+PACKAGE_NAME="openvswitch"
+PACKAGE_VERSION="__VERSION__"
+MAKE="./configure --with-linux='${kernel_source_dir}' && make -C datapath/linux"
+BUILT_MODULE_NAME[0]=openvswitch
+BUILT_MODULE_LOCATION[0]=datapath/linux/
+DEST_MODULE_LOCATION[0]=/kernel/drivers/net/openvswitch/
+AUTOINSTALL=yes

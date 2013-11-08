@@ -1,0 +1,38 @@
+ifeq ($(targetbase),linux)
+
+include $(MK_DIR)/sys.mk
+
+SRCS = column.c \
+condition.c \
+execution.c \
+file.c \
+jsonrpc-server.c \
+log.c \
+mutation.c \
+ovsdb-server.c \
+ovsdb.c \
+query.c \
+row.c \
+server.c \
+table.c \
+trigger.c \
+transaction.c 
+
+LIB = ovsdb
+
+# Flags copied from ovs top-level makefile with -Wmissing-field-initializers -Wno-override-init 
+# removed because gcc 3.x not understood.
+CFLAGS += -Wall -Wno-sign-compare -Wpointer-arith -Wdeclaration-after-statement -Wformat-security -Wswitch-enum -Wstrict-aliasing -Wbad-function-cast -Wold-style-definition
+# Remove the following cflags as old version does.
+CFLAGS += -Wcast-align  -Wstrict-prototypes -Wmissing-prototypes -Wunused-parameter
+CFLAGS += -D_OFP_CENTEC_ -D_OFP_SDK_ -DHAVE_CONFIG_H
+CFLAGS += -Werror
+
+CPPFLAGS += -I$(OVSROOT) -I$(OVSROOT)/include -I$(OVSROOT)/lib
+
+include $(MK_DIR)/lib.mk
+
+endif
+
+.PHONY: FORCE
+FORCE:

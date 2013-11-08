@@ -1,0 +1,4 @@
+::sysinit:/etc/rc.sysinit.lc
+#::respawn:/sbin/getty -L ttyCPM0 9600 vt100
+::respawn:/bin/sh -
+::shutdown:/sbin/hwclock --systohc

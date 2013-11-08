@@ -1,0 +1,60 @@
+.\" -*- nroff -*-
+.de IQ
+.  br
+.  ns
+.  IP "\\$1"
+..
+.TH ovs\-bugtool 8 "@VERSION@" "Open vSwitch" "Open vSwitch Manual"
+.\" This program's name:
+.ds PN ovs\-bugtool
+.
+.SH NAME
+ovs\-bugtool \- Open vSwitch bug reporting utility
+.
+.SH SYNOPSIS
+.B ovs\-bugtool
+.
+.SH DESCRIPTION
+Generate a debug bundle with useful information about Open vSwitch on this
+system and places it in \fB/var/log/ovs-bugtool\fR.
+.
+.SH OPTIONS
+.
+.IP "\fB\-\-all\fR"
+Use all available capabilities.
+.
+.IP "\fB\-\-capabilities\fR"
+List \fBovs\-bugtool\fR capabilities.
+.
+.IP "\fB\-\-debug\fR"
+Print verbose debugging output.
+.
+.IP "\fB\-\-entries=\fIlist\fR"
+Use the capabilities specified in a comma-separated list.
+.
+.IP "\fB\-\-log\-days=\fIdays\fR"
+Include the logs rotated in the previous \fIdays\fR days in the debug bundle.
+The number of log files included has a big impact on the eventual bundle size.
+The default value is 20 days.
+.
+.IP "\fB\-\-output=\fIfiletype\fR"
+Generate a debug bundle with the specified file type.  Options include
+\fBtar\fR, \fBtar.gz\fR, \fBtar.bz2\fR, and \fBzip\fR.
+.
+.IP "\fB\-\-ovs\fR"
+Use only Open vSwitch relevant capabilities.
+.
+.IP "\fB\-\-silent\fR"
+Suppress output.
+.
+.IP "\fB\-\-unlimited\fR"
+Do not exclude files which are too large.
+.
+.IP "\fB\-\-yestoall\fR"
+Answer yes to all prompts.
+.
+.SH BUGS
+\fBovs\-bugtool\fR makes many assumptions about file locations and the
+availability of system utilities.  It has been tested on Debian and
+Red Hat and derived distributions.  On other distributions it is
+likely to be less useful.

@@ -1,0 +1,133 @@
+.\" -*- nroff -*-
+.TH ovsdb\-server 1 "@VERSION@" "Open vSwitch" "Open vSwitch Manual"
+.\" This program's name:
+.ds PN ovsdb\-server
+.\" SSL peer program's name:
+.ds SN ovsdb\-client
+.
+.SH NAME
+ovsdb\-server \- Open vSwitch database server
+.
+.SH SYNOPSIS
+\fBovsdb\-server\fR
+[\fIdatabase\fR]\&...
+[\fB\-\-remote=\fIremote\fR]\&...
+[\fB\-\-run=\fIcommand\fR]
+.so lib/daemon-syn.man
+.so lib/vlog-syn.man
+.so lib/ssl-syn.man
+.so lib/ssl-bootstrap-syn.man
+.so lib/unixctl-syn.man
+.so lib/common-syn.man
+.
+.SH DESCRIPTION
+The \fBovsdb\-server\fR program provides RPC interfaces to one or more
+Open vSwitch databases (OVSDBs).  It supports JSON-RPC client
+connections over active or passive TCP/IP or Unix domain sockets.
+.PP
+Each OVSDB file may be specified on the command line as \fIdatabase\fR.
+If none is specified, the default is \fB@DBDIR@/conf.db\fR.  The database
+files must already have been created and initialized using, for
+example, \fBovsdb\-tool create\fR.
+.
+.SH OPTIONS
+.
+.IP "\fB\-\-remote=\fIremote\fR"
+Adds \fIremote\fR as a connection method used by \fBovsdb\-server\fR.
+\fIremote\fR must take one of the following forms:
+.
+.RS
+.so ovsdb/remote-passive.man
+.so ovsdb/remote-active.man
+.
+.IP "\fBdb:\fR[\fIdb\fB,\fR]\fItable\fB,\fIcolumn\fR"
+Reads additional connection methods from \fIcolumn\fR in all of the
+rows in \fItable\fR within \fIdb\fR.  (If \fBovsdb\-server\fR is
+providing access to only one database, then \fIdb\fR is optional.)  As
+the contents of \fIcolumn\fR changes, \fBovsdb\-server\fR also adds
+and drops connection methods accordingly.
+.IP
+If \fIcolumn\fR's type is string or set of strings, then the
+connection methods are taken directly from the column.  The connection
+methods in the column must have one of the forms described above.
+.IP
+If \fIcolumn\fR's type is UUID or set of UUIDs and references a table,
+then each UUID is looked up in the referenced table to obtain a row.
+The following columns in the row, if present and of the correct type,
+configure a connection method.  Any additional columns are ignored.
+.RS
+.IP "\fBtarget\fR (string)"
+Connection method, in one of the forms described above.  This column
+is mandatory: if it is missing or empty then no connection method can
+be configured.
+.IP "\fBmax_backoff\fR (integer)"
+Maximum number of milliseconds to wait between connection attempts.
+.IP "\fBinactivity_probe\fR (integer)"
+Maximum number of milliseconds of idle time on connection to
+client before sending an inactivity probe message.
+.RE
+.IP
+It is an error for \fIcolumn\fR to have another type.
+.RE
+.
+.IP "\fB\-\-run=\fIcommand\fR]"
+Ordinarily \fBovsdb\-server\fR runs forever, or until it is told to
+exit (see \fBRUNTIME MANAGEMENT COMMANDS\fR below).  With this option,
+\fBovsdb\-server\fR instead starts a shell subprocess running
+\fIcommand\fR.  When the subprocess terminates, \fBovsdb\-server\fR
+also exits gracefully.  If the subprocess exits normally with exit
+code 0, then \fBovsdb\-server\fR exits with exit code 0 also;
+otherwise, it exits with exit code 1.
+.IP
+This option can be useful where a database server is needed only to
+run a single command, e.g.:
+.B "ovsdb\-server \-\-remote=punix:socket \-\-run='ovsdb\-client dump unix:socket Open_vSwitch'"
+.SS "Daemon Options"
+.ds DD \
+\fBovsdb\-server\fR detaches only after it starts listening on all \
+configured remotes.
+.so lib/daemon.man
+.SS "Logging Options"
+.so lib/vlog.man
+.SS "Public Key Infrastructure Options"
+The options described below for configuring the SSL public key
+infrastructure accept a special syntax for obtaining their
+configuration from the database.  If any of these options is given
+\fBdb:\fR[\fIdb\fB,\fR]\fItable\fB,\fIcolumn\fR as its argument, then the
+actual file name is read from the specified \fIcolumn\fR in \fItable\fR
+within the \fBovsdb\-server\fR database.  The \fIcolumn\fR must have type
+string or set of strings.  The first nonempty string in the table is taken
+as the file name.  (This means that ordinarily there should be at most
+one row in \fItable\fR.)
+.so lib/ssl.man
+.so lib/ssl-bootstrap.man
+.SS "Other Options"
+.so lib/unixctl.man
+.so lib/common.man
+.SH "RUNTIME MANAGEMENT COMMANDS"
+\fBovs\-appctl\fR(8) can send commands to a running
+\fBovsdb\-server\fR process.  The currently supported commands are
+described below.
+.SS "OVSDB\-SERVER COMMANDS"
+These commands are specific to \fBovsdb\-server\fR.
+.IP "\fBexit\fR"
+Causes \fBovsdb\-server\fR to gracefully terminate.
+.IP "\fBovsdb\-server/compact\fR [\fIdb\fR]\&..."
+Compacts each database \fIdb\fR in-place.  If no \fIdb\fR is
+specified, compacts every database in-place.  Databases are also
+automatically compacted occasionally.
+.
+.IP "\fBovsdb\-server/reconnect\fR"
+Makes \fBovsdb\-server\fR drop all of the JSON\-RPC
+connections to database clients and reconnect.
+.IP
+This command might be useful for debugging issues with database
+clients.
+.
+.so lib/vlog-unixctl.man
+.so lib/memory-unixctl.man
+.so lib/coverage-unixctl.man
+.so lib/stress-unixctl.man
+.SH "SEE ALSO"
+.
+.BR ovsdb\-tool (1).

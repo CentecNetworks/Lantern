@@ -1,0 +1,79 @@
+.SS "OFPROTO COMMANDS"
+These commands manage the core OpenFlow switch implementation (called
+\fBofproto\fR).
+.
+.IP "\fBofproto/list\fR"
+Lists the names of the running ofproto instances.  These are the names
+that may be used on \fBofproto/trace\fR.
+.
+.IP "\fBofproto/trace \fIswitch priority tun_id in_port mark packet\fR"
+.IQ "\fBofproto/trace \fIswitch flow \fB\-generate\fR"
+Traces the path of an imaginary packet through \fIswitch\fR.  Both
+forms require \fIswitch\fR, the switch on which the packet arrived
+(one of those listed by \fBofproto/list\fR).  The first form specifies
+a packet's contents explicitly:
+.RS
+.IP "\fIpriority\fR"
+Packet QoS priority. Use \fB0\fR if QoS is not setup.
+.IP "\fItun_id\fR"
+The tunnel ID on which the packet arrived.  Use
+\fB0\fR if the packet did not arrive through a tunnel.
+.IP "\fIin_port\fR"
+The OpenFlow port on which the packet arrived.  Use \fB65534\fR if the
+packet arrived on \fBOFPP_LOCAL\fR, the local port.
+.IP "\fImark\fR"
+SKB mark of the packet. Use \fB0\fR if Netfilter marks are not used.
+.IP "\fIpacket\fR"
+A sequence of hex digits specifying the packet's contents.  An
+Ethernet frame is at least 14 bytes long, so there must be at least 28
+hex digits.  Obviously, it is inconvenient to type in the hex digits
+by hand, so the \fBovs\-pcap\fR(1) and \fBovs\-tcpundump\fR(1)
+utilities provide easier ways.
+.RE
+.IP
+The second form specifies the packet's contents implicitly:
+.RS
+.IP "\fIflow\fR"
+A flow in one of two forms: either the form printed by
+\fBovs\-dpctl\fR(8)'s \fBdump\-flows\fR command, or in a format
+similar to that accepted by \fBovs\-ofctl\fR(8)'s \fBadd\-flow\fR
+command.  This is not an OpenFlow flow: besides other differences, it
+never contains wildcards.  \fB\*(PN\fR generates an arbitrary packet
+that has the specified \fIflow\fR.
+.RE
+.IP
+\fB\*(PN\fR will respond with extensive information on how the packet
+would be handled if it were to be received.  The packet will not
+actually be sent, but side effects such as MAC learning will occur.
+.
+.IP "\fBofproto/trace \fIswitch flow\fR"
+Traces the path of a packet in an imaginary flow through
+\fIswitch\fR.  The arguments are:
+.RS
+.IP "\fIswitch\fR"
+The switch on which the packet arrived (one of those listed by
+\fBofproto/list\fR).
+.IP "\fIflow\fR"
+A flow in one of two forms: either the form printed by
+\fBovs\-dpctl\fR(8)'s \fBdump\-flows\fR command, or in a format
+similar to that accepted by \fBovs\-ofctl\fR(8)'s \fBadd\-flow\fR
+command.  This is not an OpenFlow flow: besides other differences, it
+never contains wildcards.
+.RE
+.IP
+\fB\*(PN\fR will respond with extensive information on how a packet
+in \fIflow\fR would be handled if it were received by
+\fIswitch\fR.  No packet will actually be sent.  Some side effects may
+occur, but MAC learning in particular will not.
+.IP
+This form of \fBofproto/trace\fR cannot determine the complete set of
+datapath actions in some corner cases.  If the results say that this
+is the case, rerun \fBofproto/trace\fR supplying a packet in the flow
+to get complete results.
+.IP "\fBofproto/self\-check\fR [\fIswitch\fR]"
+Runs an internal consistency check on \fIswitch\fR, if specified,
+otherwise on all ofproto instances, and responds with a brief summary
+of the results.  If the summary reports any errors, then the Open
+vSwitch logs should contain more detailed information.  Please pass
+along errors reported by this command to the Open vSwitch developers
+as bugs.

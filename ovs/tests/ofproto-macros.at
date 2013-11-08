@@ -1,0 +1,98 @@
+m4_divert_push([PREPARE_TESTS])
+[
+# Strips out uninteresting parts of ovs-ofctl output, as well as parts
+# that vary from one run to another.
+ofctl_strip () {
+    sed '
+s/ (xid=0x[0-9a-fA-F]*)//
+s/ duration=[0-9.]*s,//
+s/ cookie=0x0,//
+s/ table=0,//
+s/ n_packets=0,//
+s/ n_bytes=0,//
+s/ idle_age=[0-9]*,//
+s/ hard_age=[0-9]*,//
+'
+}]
+m4_divert_pop([PREPARE_TESTS])
+
+m4_define([STRIP_XIDS], [[sed 's/ (xid=0x[0-9a-fA-F]*)//']])
+m4_define([STRIP_DURATION], [[sed 's/\bduration=[0-9.]*s/duration=?s/']])
+m4_define([STRIP_USED], [[sed 's/used:[0-9]\.[0-9]*/used:0.0/']])
+m4_define([TESTABLE_LOG], [-vPATTERN:ANY:'%c|%p|%m'])
+
+# OVS_VSWITCHD_START([vsctl-args], [vsctl-output])
+#
+# Creates a database and starts ovsdb-server, starts ovs-vswitchd
+# connected to that database, calls ovs-vsctl to create a bridge named
+# br0 with predictable settings, passing 'vsctl-args' as additional
+# commands to ovs-vsctl.  If 'vsctl-args' causes ovs-vsctl to provide
+# output (e.g. because it includes "create" commands) then 'vsctl-output'
+# specifies the expected output after filtering through uuidfilt.pl.
+m4_define([OVS_VSWITCHD_START],
+  [OVS_RUNDIR=`pwd`; export OVS_RUNDIR
+   OVS_LOGDIR=`pwd`; export OVS_LOGDIR
+   OVS_DBDIR=`pwd`; export OVS_DBDIR
+   OVS_SYSCONFDIR=`pwd`; export OVS_SYSCONFDIR
+   ON_EXIT([kill `cat ovsdb-server.pid ovs-vswitchd.pid`])
+
+   dnl Create database.
+   touch .conf.db.~lock~
+   AT_CHECK([ovsdb-tool create conf.db $abs_top_srcdir/vswitchd/vswitch.ovsschema])
+
+   dnl Start ovsdb-server.
+   AT_CHECK([ovsdb-server --detach --no-chdir --pidfile --log-file --remote=punix:$OVS_RUNDIR/db.sock], [0], [], [stderr])
+   AT_CHECK([[sed < stderr '
+/vlog|INFO|opened log file/d
+/ovsdb_server|INFO|ovsdb-server (Open vSwitch)/d']])
+   AT_CAPTURE_FILE([ovsdb-server.log])
+
+   dnl Initialize database.
+   AT_CHECK([ovs-vsctl --no-wait init])
+
+   dnl Start ovs-vswitchd.
+   AT_CHECK([ovs-vswitchd --detach --no-chdir --pidfile --enable-dummy --disable-system --log-file -vvconn -vofproto_dpif], [0], [], [stderr])
+   AT_CAPTURE_FILE([ovs-vswitchd.log])
+   AT_CHECK([[sed < stderr '
+/vlog|INFO|opened log file/d
+/vswitchd|INFO|ovs-vswitchd (Open vSwitch)/d
+/reconnect|INFO|/d
+/ofproto|INFO|using datapath ID/d
+/ofproto|INFO|datapath ID changed to fedcba9876543210/d']])
+
+   dnl Add bridges, ports, etc.
+   AT_CHECK([ovs-vsctl -- add-br br0 -- set bridge br0 datapath-type=dummy other-config:datapath-id=fedcba9876543210 other-config:hwaddr=aa:55:aa:55:00:00 protocols=[[OpenFlow10,OpenFlow12,OpenFlow13]] fail-mode=secure -- $1 m4_if([$2], [], [], [| perl $srcdir/uuidfilt.pl])], [0], [$2])
+])
+
+m4_divert_push([PREPARE_TESTS])
+check_logs () {
+    sed -n "$1
+/|WARN|/p
+/|ERR|/p
+/|EMER|/p" ovs-vswitchd.log ovsdb-server.log
+}
+m4_divert_pop([PREPARE_TESTS])
+
+# OVS_VSWITCHD_STOP([WHITELIST])
+#
+# Gracefully stops ovs-vswitchd and ovsdb-server, checking their log files
+# for messages with severity WARN or higher and signaling an error if any
+# is present.  The optional WHITELIST may contain shell-quoted "sed"
+# commands to delete any warnings that are actually expected, e.g.:
+#
+#   OVS_VSWITCHD_STOP(["/expected error/d"])
+m4_define([OVS_VSWITCHD_STOP],
+  [AT_CHECK([check_logs $1])
+   AT_CHECK([ovs-appctl -t ovs-vswitchd exit])
+   AT_CHECK([ovs-appctl -t ovsdb-server exit])])
+
+# ADD_OF_PORTS(BRIDGE, OF_PORT[, OF_PORT...])
+#
+# Creates a dummy interface with an OpenFlow port number of OF_PORT and
+# name of p{OF_PORT}.  The dummy implementation will treat the OF_PORT
+# as the datapath port number, which as the effect of making the
+# OpenFlow and datapath numbers the same.
+m4_define([ADD_OF_PORTS],
+ [ovs-vsctl m4_foreach([of_port], m4_cdr($@),
+    [ \
+    -- add-port $1 p[]of_port -- set Interface p[]of_port type=dummy ofport_request=of_port])])

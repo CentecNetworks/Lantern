@@ -1,0 +1,15 @@
+#!/bin/sh
+mntpoint=/mnt/udisk
+if [ ! -e $mntpoint ]; then
+    mkdir $mntpoint
+fi
+mount /dev/sda1 $mntpoint
+if [ "$?" != "0" ];then
+    echo "Mount USB disk failed!"
+    logger -p crit "Mount USB disk failed!"
+    rm -rf $mntpoint
+    exit 1
+fi
+echo "Mount USB disk done!"
+logger -p crit "Mount USB disk done!"
+

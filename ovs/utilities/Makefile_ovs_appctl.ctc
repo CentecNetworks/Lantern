@@ -1,0 +1,28 @@
+ifeq ($(targetbase),linux)
+
+include $(MK_DIR)/sys.mk
+
+SRCS = 	ovs-appctl.c
+
+PROG = ovs-appctl
+
+# Flags copied from ovs top-level makefile with -Wmissing-field-initializers -Wno-override-init 
+# removed because gcc 3.x not understood.
+CFLAGS += -Werror -Wall -Wno-sign-compare -Wpointer-arith -Wdeclaration-after-statement -Wformat-security -Wswitch-enum -Wstrict-aliasing -Wbad-function-cast -Wold-style-definition 
+CFLAGS += -D_OFP_CENTEC_ -D_OFP_SDK_ -DHAVE_CONFIG_H
+CPPFLAGS += -I$(OVSROOT) -I$(OVSROOT)/include -I$(OVSROOT)/lib
+
+LD_LIBS = -L$(LIB_DIR) -lopenvswitch
+DEP_LIBS = $(LIB_DIR)/libopenvswitch.a
+# Linux generic libs.
+LD_LIBS += -lrt
+# SSL libs.
+LD_LIBS += -L$(PRE_BUILT_LIB_DIR)
+LD_LIBS += -lssl -lcrypto
+
+include $(MK_DIR)/prog.mk
+
+endif
+
+.PHONY: FORCE
+FORCE:

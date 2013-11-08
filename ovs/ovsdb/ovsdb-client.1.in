@@ -1,0 +1,163 @@
+.\" -*- nroff -*-
+.de IQ
+.  br
+.  ns
+.  IP "\\$1"
+..
+.\" -*- nroff -*-
+.TH ovsdb\-client 1 "@VERSION@" "Open vSwitch" "Open vSwitch Manual"
+.\" This program's name:
+.ds PN ovsdb\-client
+.\" SSL peer program's name:
+.ds SN ovsdb\-server
+.
+.SH NAME
+ovsdb\-client \- command-line interface to \fBovsdb-server\fR(1)
+.
+.SH SYNOPSIS
+\fBovsdb\-client \fR[\fIoptions\fR] \fBlist\-dbs \fR[\fIserver\fR]
+.br
+\fBovsdb\-client \fR[\fIoptions\fR] \fBget\-schema \fR[\fIserver\fR] \fR[\fIdatabase\fR]
+.br
+\fBovsdb\-client \fR[\fIoptions\fR] \fBget\-schema\-version\fI \fR[\fIserver\fR] \fR[\fIdatabase\fR]
+.br
+\fBovsdb\-client \fR[\fIoptions\fR] \fBlist\-tables\fI \fR[\fIserver\fR] \fR[\fIdatabase\fR]
+.br
+\fBovsdb\-client \fR[\fIoptions\fR] \fBlist\-columns\fI \fR[\fIserver\fR] \fR[\fIdatabase\fR] [\fItable\fR]
+.br
+\fBovsdb\-client \fR[\fIoptions\fR] \fBtransact\fI \fR[\fIserver\fR] \fItransaction\fR
+.br
+\fBovsdb\-client \fR[\fIoptions\fR] \fBdump\fI \fR[\fIserver\fR] \fR[\fIdatabase\fR]\fR
+.br
+\fBovsdb\-client \fR[\fIoptions\fR] \fBmonitor\fI \fR[\fIserver\fR] \fR[\fIdatabase\fR] \fItable\fR
+[\fIcolumn\fR[\fB,\fIcolumn\fR]...]...
+.br
+\fBovsdb\-client help\fR
+.IP "Output formatting options:"
+[\fB\-\-format=\fIformat\fR]
+[\fB\-\-data=\fIformat\fR]
+[\fB\-\-no-heading\fR]
+[\fB\-\-pretty\fR]
+[\fB\-\-bare\fR]
+[\fB\-\-no\-heading\fR]
+[\fB\-\-timestamp\fR]
+.so lib/daemon-syn.man
+.so lib/vlog-syn.man
+.so lib/ssl-syn.man
+.so lib/ssl-bootstrap-syn.man
+.so lib/common-syn.man
+.
+.SH DESCRIPTION
+The \fBovsdb\-client\fR program is a command-line client for
+interacting with a running \fBovsdb\-server\fR process.
+Each command connects to an OVSDB server, which is
+\fBunix:@RUNDIR@/db.sock\fR by default, or may be specified as
+\fIserver\fR in one of the following forms:
+.RS
+.so ovsdb/remote-active.man
+.so ovsdb/remote-passive.man
+.RE
+.PP
+The default \fIdatabase\fR is \fBOpen_vSwitch\fR.
+.
+.SS "Commands"
+The following commands are implemented:
+.IP "\fBlist\-dbs \fR[\fIserver\fR]"
+Connects to \fIserver\fR, retrieves the list of known databases, and
+prints them one per line.  These database names are the ones that may
+be used for \fIdatabase\fR in the following commands.
+.
+.IP "\fBget\-schema \fR[\fIserver\fR] \fR[\fIdatabase\fR]"
+Connects to \fIserver\fR, retrieves the schema for \fIdatabase\fR, and
+prints it in JSON format.
+.
+.IP "\fBget\-schema\-version\fI \fR[\fIserver\fR] \fR[\fIdatabase\fR]"
+Connects to \fIserver\fR, retrieves the schema for \fIdatabase\fR, and
+prints its version number on stdout.  A schema version number has the form
+\fIx\fB.\fIy\fB.\fIz\fR.  See \fBovs\-vswitchd.conf.db\fR(5) for
+details.
+.IP
+Schema version numbers and Open vSwitch version numbers are
+independent.
+.IP
+If \fIdatabase\fR was created before schema versioning was introduced,
+then it will not have a version number and this command will print a
+blank line.
+.
+.IP "\fBlist\-tables\fI \fR[\fIserver\fR] \fR[\fIdatabase\fR]"
+Connects to \fIserver\fR, retrieves the schema for \fIdatabase\fR, and
+prints a table listing the name of each table
+within the database.
+.
+.IP "\fBlist\-columns\fI \fR[\fIserver\fR] \fR[\fIdatabase\fR] \fItable\fR"
+Connects to \fIserver\fR, retrieves the schema for \fIdatabase\fR, and
+prints a table listing the name and type of each
+column.  If \fItable\fR is specified, only columns in that table are
+listed; otherwise, the tables include columns in all tables.
+.
+.IP "\fBtransact\fI \fR[\fIserver\fR] \fItransaction\fR"
+Connects to \fIserver\fR, sends it the specified \fItransaction\fR,
+which must be a JSON array containing one or more valid OVSDB
+operations, and prints the received reply on stdout.
+.
+.IP "\fBdump\fI \fR[\fIserver\fR] \fR[\fIdatabase\fR]\fR"
+Connects to \fIserver\fR, retrieves all of the data in \fIdatabase\fR,
+and prints it on stdout as a series of tables.
+.
+.IP "\fBmonitor\fI \fR[\fIserver\fR] \fR[\fIdatabase\fR] \fItable\fR [\fIcolumn\fR[\fB,\fIcolumn\fR]...]..."
+Connects to \fIserver\fR and monitors the contents of \fItable\fR in
+\fIdatabase\fR.  By default, the initial contents of \fItable\fR are
+printed, followed by each change as it occurs.  If at least one
+\fIcolumn\fR is specified, only those columns are monitored.  The
+following \fIcolumn\fR names have special meanings:
+.RS
+.IP "\fB!initial\fR"
+Do not print the initial contents of the specified columns.
+.IP "\fB!insert\fR"
+Do not print newly inserted rows.
+.IP "\fB!delete\fR"
+Do not print deleted rows.
+.IP "\fB!modify\fR"
+Do not print modifications to existing rows.
+.RE
+.IP
+Multiple [\fIcolumn\fR[\fB,\fIcolumn\fR]...] groups may be specified
+as separate arguments, e.g. to apply different reporting parameters to
+each group.  Whether multiple groups or only a single group is
+specified, any given column may only be mentioned once on the command
+line.
+.IP
+If \fB\-\-detach\fR is used with \fBmonitor\fR, then \fBovsdb\-client\fR
+detaches after it has successfully received and printed the initial
+contents of \fItable\fR.
+.SH OPTIONS
+.SS "Output Formatting Options"
+Much of the output from \fBovsdb\-client\fR is in the form of tables.
+The following options controlling output formatting:
+.
+.ds TD (default)
+.so lib/table.man
+.
+.IP "\fB\-\-timestamp\fR"
+For the \fBmonitor\fR command, adds a timestamp to each table
+update.  Most output formats add the timestamp on a line of its own
+just above the table.  The JSON output format puts the timestamp in a
+member of the top-level JSON object named \fBtime\fR.
+.
+.SS "Daemon Options"
+The daemon options apply only to the \fBmonitor\fR command.  With any
+other command, they have no effect.
+.ds DD
+.so lib/daemon.man
+.SS "Logging Options"
+.so lib/vlog.man
+.SS "Public Key Infrastructure Options"
+.so lib/ssl.man
+.so lib/ssl-bootstrap.man
+.SS "Other Options"
+.so lib/common.man
+.SH "SEE ALSO"
+.
+\fBovsdb\-server\fR(1),
+\fBovsdb\-client\fR(1),
+and the OVSDB specification.

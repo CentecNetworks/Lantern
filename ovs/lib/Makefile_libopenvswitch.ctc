@@ -1,0 +1,178 @@
+ifeq ($(targetbase),linux)
+
+include $(MK_DIR)/sys.mk
+
+ifeq ($(IS_UML),y)
+OVS_ON_SWITCH_DIR = /mnt/flash/openvswitch
+else
+OVS_ON_SWITCH_DIR = /usr/local/openvswitch
+endif
+
+prefix = $(OVS_ON_SWITCH_DIR)/
+localstatedir = ${prefix}/var
+LOGDIR = ${localstatedir}/log/
+RUNDIR = ${localstatedir}/run/
+exec_prefix = ${prefix}
+bindir = ${exec_prefix}/bin
+sysconfdir = ${prefix}/etc
+DBDIR = ${sysconfdir}/db
+pkgdatadir = $(prefix)/data
+srcdir = $(OVSROOT)
+
+# Unused files like learning-switch have been removed from the list.
+SRCS = aes128.c \
+backtrace.c \
+bitmap.c \
+bond.c \
+bundle.c \
+byteq.c \
+cfm.c \
+classifier.c \
+command-line.c \
+coverage.c \
+csum.c \
+daemon.c \
+heap.c \
+dynamic-string.c \
+entropy.c \
+fatal-signal.c \
+flow.c \
+hash.c \
+jhash.c \
+hmap.c \
+hmapx.c \
+json.c \
+jsonrpc.c \
+lacp.c \
+leak-checker.c \
+learn.c \
+list.c \
+lockfile.c \
+mac-learning.c \
+match.c \
+memory.c \
+meta-flow.c \
+multipath.c \
+netdev-dummy.c \
+netdev.c \
+netlink.c \
+nx-match.c \
+odp-util.c \
+ofp-actions.c \
+ofp-errors.c \
+ofp-msgs.c \
+ofp-parse.c \
+ofp-print.c \
+ofp-util.c \
+ofp-version-opt.c \
+ofpbuf.c \
+ovsdb-data.c \
+ovsdb-error.c \
+ovsdb-idl.c \
+ovsdb-parser.c \
+ovsdb-types.c \
+packets.c \
+pcap.c \
+poll-loop.c \
+process.c \
+random.c \
+rconn.c \
+reconnect.c \
+sha1.c \
+shash.c \
+simap.c \
+signals.c \
+smap.c \
+socket-util.c \
+sort.c \
+sset.c \
+stp.c \
+stream-fd.c \
+stream-tcp.c \
+stream-unix.c \
+stream-ssl.c \
+stream.c \
+stress.c \
+string.c \
+svec.c \
+table.c \
+tag.c \
+timer.c \
+timeval.c \
+token-bucket.c \
+unicode.c \
+unixctl.c \
+util.c \
+uuid.c \
+vconn-stream.c \
+vconn.c \
+vlan-bitmap.c \
+vlandev.c \
+vlog.c \
+vswitch-idl.c \
+worker.c \
+
+# Auto generated files.
+SRCS += dirs.c dhparams.c
+
+# XXX: remove there legacy L2 files(we do not provider a seperate libsflow.a).
+# sflow: sflow_agent.c sflow_sampler.c sflow_poller.c sflow_receiver.c
+# dpif related files.
+# dummy.c netdev-dummy.c
+
+# Stubs that solved symbols because of removal of dpif.c related files.
+SRCS += stub_symbols.c 
+
+LIB = openvswitch
+
+# Flags copied from ovs top-level makefile with -Wmissing-field-initializers -Wno-override-init 
+# removed because gcc 3.x not understood.
+CFLAGS += -D_OFP_CENTEC_ -D_OFP_SDK_ -DHAVE_CONFIG_H
+CFLAGS += -Wno-deprecated-declarations
+
+CPPFLAGS += -I$(OVSROOT) -I$(OVSROOT)/include -I$(OVSROOT)/lib
+CPPFLAGS += -I$(TOP_DIR)/include
+CPPFLAGS += -I$(TOP_DIR)/lib/sal/include
+CPPFLAGS += -I$(TOP_DIR)/lib/util/include
+CPPFLAGS += -I$(TOP_DIR)/third_party
+
+# Must precede other rules in order to set the library as top-level target.
+include $(MK_DIR)/lib.mk
+
+# This rule is used for auto-generated files
+# Prevent auto-generate these two files because the python version on our server is very old...
+# ofp-errors.c: ofp-errors.inc
+# ofp-msgs.c: ofp-msgs.inc
+# We genrate these three files directly because we will modify it rarely.
+_dummy: vswitch-idl.c vswitch-idl.h vswitch-idl.ovsidl
+
+dhparams.c: dh1024.pem dh2048.pem dh4096.pem
+	(echo '#include "lib/dhparams.h"' &&				\
+	 openssl dhparam -C -in $(srcdir)/lib/dh1024.pem -noout &&	\
+	 openssl dhparam -C -in $(srcdir)/lib/dh2048.pem -noout &&	\
+	 openssl dhparam -C -in $(srcdir)/lib/dh4096.pem -noout)	\
+	| sed 's/\(get_dh[0-9]*\)()/\1(void)/' > dhparams.c.tmp
+	mv dhparams.c.tmp dhparams.c
+
+dirs.c: dirs.c.in
+	(echo '/* -*- mode: c; buffer-read-only: t -*- */' && sed < dirs.c.in \
+		-e 's,[@]srcdir[@],$(srcdir),g' \
+		-e 's,[@]LOGDIR[@],"$(LOGDIR)",g' \
+		-e 's,[@]RUNDIR[@],"$(RUNDIR)",g' \
+		-e 's,[@]DBDIR[@],"$(DBDIR)",g' \
+		-e 's,[@]bindir[@],"$(bindir)",g' \
+		-e 's,[@]sysconfdir[@],"$(sysconfdir)",g' \
+		-e 's,[@]pkgdatadir[@],"$(pkgdatadir)",g') \
+	     > dirs.c.tmp
+	mv dirs.c.tmp dirs.c
+
+#ofp-errors.inc: ofp-errors.h FORCE
+#	python $(OVSROOT)/build-aux/extract-ofp-errors ofp-errors.h > $@.tmp && mv $@.tmp $@
+
+#ofp-msgs.inc: ofp-msgs.h FORCE
+#	python $(OVSROOT)/build-aux/extract-ofp-msgs ofp-msgs.h $@ > $@.tmp && mv $@.tmp $@
+
+endif
+
+.PHONY: FORCE
+FORCE:

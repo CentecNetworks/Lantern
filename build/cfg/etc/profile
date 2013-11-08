@@ -1,0 +1,5 @@
+PS1='[\u@\h \w]$ '
+PATH=/usr/sbin:/usr/bin:/sbin:/bin:.:/usr/local/openvswitch/bin/
+
+alias ldd="/lib/ld.so.1 --list"
+alias mount_nfs="mount -t nfs -o nfsvers=2,nolock"

@@ -1,0 +1,81 @@
+
+ifeq ($(targetbase),linux)
+
+ifndef CHIPNAME
+export CHIPNAME = humber
+endif
+
+ovs_bin_targets = ovs_vswitchd ovsdb_server ovs_vsctl ovs_ofctl ovs_appctl ovsdb_tool ovs_pki 
+ovs_lib_targets = libopenvswitch libofproto libovsdb
+
+all_targets = $(ovs_lib_targets) 
+all_targets += $(ovs_bin_targets) 
+
+all: $(all_targets) FORCE
+
+clean: $(addprefix clean_,$(all_targets)) FORCE
+
+libopenvswitch: FORCE
+	make -C $(OVSROOT)/lib -f Makefile_libopenvswitch.ctc
+	
+clean_libopenvswitch: FORCE
+	make -C $(OVSROOT)/lib -f Makefile_libopenvswitch.ctc clean
+
+libofproto:  FORCE
+	make -C $(OVSROOT)/ofproto -f Makefile.ctc
+
+clean_libofproto: FORCE
+	make -C $(OVSROOT)/ofproto -f Makefile.ctc clean
+	
+libovsdb:  FORCE
+	make -C $(OVSROOT)/ovsdb -f Makefile_libovsdb.ctc
+
+clean_libovsdb: FORCE
+	make -C $(OVSROOT)/ovsdb -f Makefile_libovsdb.ctc clean
+
+ovs_vswitchd:  libofproto libopenvswitch
+	make -C $(OVSROOT)/vswitchd -f Makefile.ctc
+
+clean_ovs_vswitchd: FORCE
+	make -C $(OVSROOT)/vswitchd -f Makefile.ctc clean
+
+ovsdb_server:  libovsdb libopenvswitch 
+	make -C $(OVSROOT)/ovsdb -f Makefile_ovsdb_server.ctc
+
+clean_ovsdb_server: FORCE
+	make -C $(OVSROOT)/ovsdb -f Makefile_ovsdb_server.ctc clean
+
+ovs_vsctl:  libopenvswitch
+	make -C $(OVSROOT)/utilities -f Makefile_ovs_vsctl.ctc
+
+clean_ovs_vsctl: FORCE
+	make -C $(OVSROOT)/utilities -f Makefile_ovs_vsctl.ctc clean
+	
+ovs_ofctl:  libofproto libopenvswitch
+	make -C $(OVSROOT)/utilities -f Makefile_ovs_ofctl.ctc
+
+clean_ovs_ofctl: FORCE
+	make -C $(OVSROOT)/utilities -f Makefile_ovs_ofctl.ctc clean
+
+ovs_appctl:  libopenvswitch
+	make -C $(OVSROOT)/utilities -f Makefile_ovs_appctl.ctc
+
+clean_ovs_appctl: FORCE
+	make -C $(OVSROOT)/utilities -f Makefile_ovs_appctl.ctc clean
+	
+ovsdb_tool:  libovsdb libopenvswitch
+	make -C $(OVSROOT)/ovsdb -f Makefile_ovsdb_tool.ctc
+
+clean_ovsdb_tool: FORCE
+	make -C $(OVSROOT)/ovsdb -f Makefile_ovsdb_tool.ctc clean
+
+ovs_pki: FORCE
+	@chmod a+x $(OVSROOT)/utilities/ctc_ovs_pki.sh
+	@$(OVSROOT)/utilities/ctc_ovs_pki.sh
+
+clean_ovs_pki: FORCE
+	@rm -rf $(OVSROOT)/utilities/ovs-pki
+
+.PHONY: FORCE
+FORCE:
+endif

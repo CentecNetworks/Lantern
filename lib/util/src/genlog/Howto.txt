@@ -1,0 +1,74 @@
+Howto:
+
+1.  call function log_sys to send message
+    /*******************************************************************************
+     * Name:    log_sys
+     * Purpose: add one system log
+     * Input: 
+     *   eModule: module id
+     *   eSeverity: log severity level
+     *   fmt: the log content
+     * Output: 
+     * Return: N/A
+     * Note: log length should be limited in 1024 bytes 
+     ******************************************************************************/
+    void log_sys(E_MODULE eModule, E_SEVERITY eSeverity, const char *fmt, ...)
+    
+    you can replace the old zlog_xxx series function, xx denoted by the eSeverity param.
+
+     eg: zlog_info (stpm, "SIGHUP received");  
+          --> log_sys(M_MOD_STP, E_INFORMATIONAL,  "SIGHUP received");
+          
+          zlog_debug (NSM_ZG, "Packet sent error. err = %d, %d", res, errno); // in arp_ether.c
+          --> log_sys(M_MOD_ARP, E_DEBUG,  "Packet sent error. err = %d, %d", res, errno);
+
+2. call function log_alarm to send device alarm message, for example, the cpu
+temperature is too high. Device alarm log can be sent by snmp-trap, you can
+use the "alarm log trapping (enable|disable)" cli to control, and the default
+value if enable.
+    /*******************************************************************************
+     * Name:    log_alarm
+     * Purpose: add one device alarm log
+     * Input: 
+     *   eModule: module id
+     *   eSeverity: alarm level
+     *   fmt: log content
+     * Output: 
+     * Return: N/A
+     * Note: 
+     ******************************************************************************/
+    void log_alarm(E_MODULE eModule, E_ALARM_LEVEL eSeverity, const char *fmt, ...)
+
+
+3. Operating log feature has been supported, all the login, logout
+information, and the operating cli has been recorded.
+
+Notice:
+    If the enmu E_MODULE does not contain your module, you can append a new moduleid in the enum E_MODULE, simultaneity, 
+    add a module name defination, and update the global variable gModuleNameArr in zebos/lib/genlog/genlog_inner.h
+    eg: If you need to add a new module type named "moda", follow these three steps:
+          1)   
+              typedef enum
+              {
+                     M_MOD_UNKNOWN = 0,
+                     M_MOD_STP, /* For STP protocol */
+                     .....
+                     M_MOD_HTTPS, /* For HTTPS */
+                     M_MOD_MODA, /* add for moda here*/
+                     M_MOD_MAX /* Max module number */
+               } E_MODULE;
+          2) 
+                ......
+                #define M_MNAME_HTTPS "HTTPS"
+                #define M_MNAME_MODA "MODA"     /* add for moda here */
+                #define M_MNAME_MAX "UNKNOWN" 
+          3)
+                S_MODULE_NAME_PAIR gModuleNameArr[] =
+                {
+                    {M_MOD_UNKNOWN, M_MNAME_UNKNOWN},
+                     {M_MOD_STP, M_MNAME_STP},
+                     ......
+                     {M_MOD_HTTPS, M_MNAME_HTTPS},
+                     {M_MOD_MODA, M_MNAME_MODA},   /* add for moda here */
+                     {M_MOD_MAX, M_MNAME_MAX}
+                 }    

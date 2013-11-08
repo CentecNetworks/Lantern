@@ -1,0 +1,54 @@
+# -*- shell-script -*-
+HAVE_OPENSSL='@HAVE_OPENSSL@'
+HAVE_PYTHON='@HAVE_PYTHON@'
+PERL='@PERL@'
+
+if test x"$PYTHON" = x; then
+    PYTHON='@PYTHON@'
+fi
+
+PYTHONPATH=$abs_top_srcdir/python:$abs_top_builddir/tests:$PYTHONPATH
+export PYTHONPATH
+
+PYTHONIOENCODING=utf_8
+export PYTHONIOENCODING
+
+# PYTHONDONTWRITEBYTECODE=yes keeps Python 2.6+ from creating .pyc and .pyo
+# files.  Creating .py[co] works OK for any given version of Open
+# vSwitch, but it causes trouble if you switch from a version with
+# foo/__init__.py into an (older) version with plain foo.py, since
+# foo/__init__.pyc will cause Python to ignore foo.py.
+#
+# Python before version 2.6 always creates .pyc files, so if you develop
+# with such an older version then you're out of luck.
+PYTHONDONTWRITEBYTECODE=yes
+export PYTHONDONTWRITEBYTECODE
+
+if test $HAVE_PYTHON = yes; then
+    if python -m argparse 2>/dev/null; then
+        :
+    else
+        PYTHONPATH=$PYTHONPATH:$abs_top_srcdir/python/compat
+        export PYTHONPATH
+    fi
+fi
+
+# Enable malloc debugging features.
+case `uname` in
+Linux)
+    MALLOC_CHECK_=2
+    MALLOC_PERTURB_=165
+    export MALLOC_CHECK_
+    export MALLOC_PERTURB_
+    ;;
+FreeBSD)
+    case `uname -r` in
+    [789].*)
+        MALLOC_CONF=AJ
+        ;;
+    *)
+        MALLOC_CONF=abort:true,junk:true,redzone:true
+        ;;
+    esac
+    export MALLOC_CONF
+esac

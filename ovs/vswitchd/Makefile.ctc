@@ -1,0 +1,46 @@
+ifeq ($(targetbase),linux)
+
+include $(MK_DIR)/sys.mk
+
+# XXX: remove xenserver.c if we have remove the dependency later.
+SRCS = 	bridge.c \
+ovs-vswitchd.c \
+system-stats.c \
+xenserver.c \
+
+PROG = ovs-vswitchd
+
+# Flags copied from ovs top-level makefile with -Wmissing-field-initializers -Wno-override-init 
+CFLAGS += -D_OFP_CENTEC_ -D_OFP_SDK_ -DHAVE_CONFIG_H
+
+CPPFLAGS += -I$(OVSROOT) -I$(OVSROOT)/include -I$(OVSROOT)/lib
+CPPFLAGS += -I$(TOP_DIR)/lib/sal/include
+
+LD_LIBS = -L$(LIB_DIR) -lofproto
+DEP_LIBS = $(LIB_DIR)/libofproto.a
+LD_LIBS += -L$(PRE_BUILT_LIB_DIR)
+# Centec libs.
+LD_LIBS += -Wl,--start-group -lsdkcore -ladapt -Wl,--end-group -lafx  -lopenvswitch
+DEP_LIBS += $(LIB_DIR)/libsdkcore.a $(LIB_DIR)/libctclib.a $(LIB_DIR)/libadapt.a $(LIB_DIR)/libafx.a $(LIB_DIR)/libopenvswitch.a
+LD_LIBS += -L$(PRE_BUILT_LIB_DIR) -llcm -ldrvs -lvsc -ldrv -lkal -ldal -lsal
+
+# Linux generic libs.
+LD_LIBS += -lrt -lm -lpthread
+# SSL, SSH/RSA libs.
+LD_LIBS += -lssl -lcrypto
+
+ifeq ($(_V330_OPEN_SOURCE), n)
+DEP_LIBS +=  $(LIB_DIR)/libctccli.a $(LIB_DIR)/liblibctccli.a
+DEP_LIBS +=  $(LIB_DIR)/liblcm.a 
+LD_LIBS += -lctccli -llibctccli
+endif
+
+DEP_LIBS += $(LIB_DIR)/libctclib.a
+LD_LIBS += -lctclib
+
+include $(MK_DIR)/prog.mk
+
+endif
+
+.PHONY: FORCE
+FORCE:

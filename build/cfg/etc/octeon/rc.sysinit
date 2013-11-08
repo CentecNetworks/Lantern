@@ -1,0 +1,19 @@
+#!/bin/sh
+
+########################################################################
+# Copyright (C) 2004-2013 Centec Networks. All rights reserved.
+########################################################################
+
+echo "Starting Open vSwitch ..."
+echo "Starting ovsdb-server ..."
+/usr/local/openvswitch/bin/ovsdb-server /usr/local/openvswitch/etc/db/conf.db --remote=punix:/usr/local/openvswitch/var/run/db.sock --remote=db:Open_vSwitch,manager_options --pidfile=/usr/local/openvswitch/var/run/ovsdb-server.pid --unixctl=/usr/local/openvswitch/var/run/ovsdb-server.ctl --detach --verbose=ANY:syslog:off > /dev/null 2>&1
+echo "Starting ovs-vswitchd ..."
+/usr/local/openvswitch/bin/ovs-vswitchd unix:/usr/local/openvswitch/var/run/db.sock --unixctl=/usr/local/openvswitch/var/run/ovs.ctl --pidfile=/usr/local/openvswitch/var/run/ovs-vswitchd.pid --verbose=ANY:syslog:err > /dev/null 2>&1 &
+
+telnetd
+
+echo "         "  > /dev/null
+echo "Ready to service!"
+echo ""
+# just change the console's st_atime
+touch /dev/console

@@ -1,0 +1,542 @@
+AT_BANNER([OVSDB -- ovsdb-server transactions (Unix sockets)])
+
+m4_define([OVSDB_SERVER_SHUTDOWN], 
+  [cp pid savepid
+   AT_CHECK([ovs-appctl -t "`pwd`"/unixctl -e exit], [0], [ignore], [ignore])
+   OVS_WAIT_WHILE([kill -0 `cat savepid`], [kill `cat savepid`])])
+
+# OVSDB_CHECK_EXECUTION(TITLE, SCHEMA, TRANSACTIONS, OUTPUT, [KEYWORDS])
+#
+# Creates a database with the given SCHEMA, starts an ovsdb-server on
+# that database, and runs each of the TRANSACTIONS (which should be a
+# quoted list of quoted strings) against it with ovsdb-client one at a
+# time.
+#
+# Checks that the overall output is OUTPUT, but UUIDs in the output
+# are replaced by markers of the form <N> where N is a number.  The
+# first unique UUID is replaced by <0>, the next by <1>, and so on.
+# If a given UUID appears more than once it is always replaced by the
+# same marker.
+#
+# TITLE is provided to AT_SETUP and KEYWORDS to AT_KEYWORDS.
+m4_define([OVSDB_CHECK_EXECUTION], 
+  [AT_SETUP([$1])
+  OVS_RUNDIR=`pwd`; export OVS_RUNDIR
+   AT_KEYWORDS([ovsdb server positive unix $5])
+   $2 > schema
+   AT_CHECK([ovsdb-tool create db schema], [0], [stdout], [ignore])
+   AT_CHECK([ovsdb-server --detach --no-chdir --pidfile="`pwd`"/pid --remote=punix:socket --unixctl="`pwd`"/unixctl db], [0], [ignore], [ignore])
+   m4_foreach([txn], [$3], 
+     [AT_CHECK([ovsdb-client transact unix:socket 'txn'], [0], [stdout], [ignore],
+     [test ! -e pid || kill `cat pid`])
+cat stdout >> output
+])
+   AT_CHECK([perl $srcdir/uuidfilt.pl output], [0], [$4], [ignore],
+            [test ! -e pid || kill `cat pid`])
+   OVSDB_SERVER_SHUTDOWN
+   AT_CLEANUP])
+
+EXECUTION_EXAMPLES
+
+AT_SETUP([truncating corrupted database log])
+AT_KEYWORDS([ovsdb server positive unix])
+OVS_RUNDIR=`pwd`; export OVS_RUNDIR
+ordinal_schema > schema
+AT_CHECK([ovsdb-tool create db schema], [0], [stdout], [ignore])
+dnl Do one transaction and save the output.
+AT_DATA([txnfile], [[ovsdb-client transact unix:socket \
+'["ordinals",
+  {"op": "insert",
+   "table": "ordinals",
+   "row": {"number": 0, "name": "zero"}}]'
+]])
+AT_CHECK([ovsdb-server --remote=punix:socket --unixctl="`pwd`"/unixctl db --run="sh txnfile"], [0], [stdout], [])
+cat stdout >> output
+dnl Add some crap to the database log and run another transaction, which should
+dnl ignore the crap and truncate it out of the log.
+echo 'xxx' >> db
+AT_DATA([txnfile], [[ovsdb-client transact unix:socket \
+'["ordinals",
+  {"op": "insert",
+   "table": "ordinals",
+   "row": {"number": 1, "name": "one"}}]'
+]])
+AT_CHECK([ovsdb-server --remote=punix:socket --unixctl="`pwd`"/unixctl db --run="sh txnfile"], [0], [stdout], [stderr])
+AT_CHECK([grep 'syntax error: db: parse error.* in header line "xxx"' stderr],
+  [0], [ignore])
+cat stdout >> output
+dnl Run a final transaction to verify that both transactions succeeeded.
+dnl The crap that we added should have been truncated by the previous run,
+dnl so ovsdb-server shouldn't log a warning this time.
+AT_DATA([txnfile], [[ovsdb-client transact unix:socket \
+'["ordinals",
+  {"op": "select",
+   "table": "ordinals",
+   "where": [],
+   "sort": ["number"]}]'
+]])
+AT_CHECK([ovsdb-server --remote=punix:socket --unixctl="`pwd`"/unixctl db --run="sh txnfile"], [0], [stdout], [])
+cat stdout >> output
+AT_CHECK([perl $srcdir/uuidfilt.pl output], [0],
+  [[[{"uuid":["uuid","<0>"]}]
+[{"uuid":["uuid","<1>"]}]
+[{"rows":[{"_uuid":["uuid","<0>"],"_version":["uuid","<2>"],"name":"zero","number":0},{"_uuid":["uuid","<1>"],"_version":["uuid","<3>"],"name":"one","number":1}]}]
+]], [],
+         [test ! -e pid || kill `cat pid`])
+AT_CLEANUP
+
+AT_SETUP([truncating database log with bad transaction])
+AT_KEYWORDS([ovsdb server positive unix])
+OVS_RUNDIR=`pwd`; export OVS_RUNDIR
+ordinal_schema > schema
+AT_CHECK([ovsdb-tool create db schema], [0], [stdout], [ignore])
+dnl Do one transaction and save the output.
+AT_DATA([txnfile], [[ovsdb-client transact unix:socket \
+'["ordinals",
+  {"op": "insert",
+   "table": "ordinals",
+   "row": {"number": 0, "name": "zero"}}]'
+]])
+AT_CHECK([ovsdb-server --remote=punix:socket --unixctl="`pwd`"/unixctl db --run="sh txnfile"], [0], [stdout], [])
+cat stdout >> output
+dnl Add some crap to the database log and run another transaction, which should
+dnl ignore the crap and truncate it out of the log.
+echo 'OVSDB JSON 15 ffbcdae4b0386265f9ea3280dd7c8f0b72a20e56
+{"invalid":{}}' >> db
+AT_DATA([txnfile], [[ovsdb-client transact unix:socket \
+'["ordinals",
+  {"op": "insert",
+   "table": "ordinals",
+   "row": {"number": 1, "name": "one"}}]'
+]])
+AT_CHECK([ovsdb-server --remote=punix:socket --unixctl="`pwd`"/unixctl db --run="sh txnfile"], [0], [stdout], [stderr])
+AT_CHECK([grep 'syntax "{"invalid":{}}": unknown table: No table named invalid.' stderr],
+  [0], [ignore])
+cat stdout >> output
+dnl Run a final transaction to verify that both transactions succeeeded.
+dnl The crap that we added should have been truncated by the previous run,
+dnl so ovsdb-server shouldn't log a warning this time.
+AT_DATA([txnfile], [[ovsdb-client transact unix:socket \
+'["ordinals",
+  {"op": "select",
+   "table": "ordinals",
+   "where": [],
+   "sort": ["number"]}]'
+]])
+AT_CHECK([ovsdb-server --remote=punix:socket --unixctl="`pwd`"/unixctl db --run="sh txnfile"], [0], [stdout], [])
+cat stdout >> output
+AT_CHECK([perl $srcdir/uuidfilt.pl output], [0],
+  [[[{"uuid":["uuid","<0>"]}]
+[{"uuid":["uuid","<1>"]}]
+[{"rows":[{"_uuid":["uuid","<0>"],"_version":["uuid","<2>"],"name":"zero","number":0},{"_uuid":["uuid","<1>"],"_version":["uuid","<3>"],"name":"one","number":1}]}]
+]], [],
+         [test ! -e pid || kill `cat pid`])
+AT_CLEANUP
+
+AT_SETUP([ovsdb-client get-schema-version])
+AT_KEYWORDS([ovsdb server positive])
+OVS_RUNDIR=`pwd`; export OVS_RUNDIR
+ordinal_schema > schema
+AT_CHECK([ovsdb-tool create db schema], [0], [ignore], [ignore])
+AT_CHECK([ovsdb-server --detach --no-chdir --pidfile="`pwd`"/pid --unixctl="`pwd`"/unixctl --remote=punix:socket db], [0], [ignore], [ignore])
+AT_CHECK([ovsdb-client get-schema-version unix:socket ordinals], [0], [5.1.3
+])
+OVSDB_SERVER_SHUTDOWN
+AT_CLEANUP
+
+AT_SETUP([database multiplexing implementation])
+AT_KEYWORDS([ovsdb server positive])
+OVS_RUNDIR=`pwd`; export OVS_RUNDIR
+ordinal_schema > schema1
+constraint_schema > schema2
+AT_CHECK([ovsdb-tool create db1 schema1], [0], [ignore], [ignore])
+AT_CHECK([ovsdb-tool create db2 schema2], [0], [ignore], [ignore])
+AT_CHECK([ovsdb-server --detach --no-chdir --pidfile="`pwd`"/pid --unixctl="`pwd`"/unixctl --remote=punix:socket db1 db2], [0], [ignore], [ignore])
+AT_CHECK(
+  [[ovsdb-client list-dbs unix:socket]], 
+  [0], [constraints
+ordinals
+], [ignore], [test ! -e pid || kill `cat pid`])
+AT_CHECK(
+  [[test-jsonrpc request unix:socket get_schema [\"nonexistent\"]]], [0],
+  [[{"error":null,"id":0,"result":{"details":"get_schema request specifies unknown database nonexistent","error":"unknown database","syntax":"[\"nonexistent\"]"}}
+]], [], [test ! -e pid || kill `cat pid`])
+OVSDB_SERVER_SHUTDOWN
+AT_CLEANUP
+
+AT_SETUP([--remote=db: implementation])
+AT_KEYWORDS([ovsdb server positive])
+OVS_RUNDIR=`pwd`; export OVS_RUNDIR
+OVS_LOGDIR=`pwd`; export OVS_LOGDIR
+AT_DATA([schema],
+  [[{"name": "mydb",
+     "tables": {
+       "Root": {
+         "columns": {
+           "managers": {
+             "type": {
+               "key": "string",
+               "min": 0,
+               "max": "unlimited"}},
+           "manager_options": {
+             "type": {
+               "key": {"type": "uuid", "refTable": "Manager"},
+               "min": 0,
+               "max": "unlimited"}}}},
+       "Manager": {
+         "columns": {
+           "target": {
+             "type": "string"},
+           "is_connected": {
+             "type": {
+               "key": "boolean",
+               "min": 0,
+               "max": 1}}}}}}
+]])
+AT_CHECK([ovsdb-tool create db schema], [0], [ignore], [ignore])
+AT_CHECK(
+  [[ovsdb-tool transact db \
+     '["mydb",
+       {"op": "insert",
+        "table": "Root",
+        "row": {
+          "managers": "punix:socket1",
+          "manager_options": ["set", [["named-uuid", "x"]]]}},
+       {"op": "insert",
+        "table": "Manager",
+        "uuid-name": "x",
+        "row": {"target": "punix:socket2"}}]']], [0], [ignore], [ignore])
+ON_EXIT([kill `cat ovsdb-server.pid`])
+AT_CHECK([ovsdb-server --enable-dummy --detach --no-chdir --pidfile --remote=db:Root,managers --remote=db:Root,manager_options --log-file db], [0], [ignore], [ignore])
+for i in 1 2 3 4 5 6; do ovs-appctl -t ovsdb-server time/warp 1000; done
+AT_CHECK(
+  [[ovsdb-client transact unix:socket1 \
+     '["mydb",
+       {"op": "select",
+        "table": "Root",
+        "where": [],
+        "columns": ["managers"]},
+       {"op": "select",
+        "table": "Manager",
+        "where": [],
+        "columns": ["target", "is_connected"]}]']],
+  [0], [stdout], [ignore])
+AT_CHECK(
+  [perl $srcdir/uuidfilt.pl stdout], 
+  [0], 
+  [[[{"rows":[{"managers":"punix:socket1"}]},{"rows":[{"is_connected":false,"target":"punix:socket2"}]}]
+]], 
+  [ignore])
+AT_CLEANUP
+
+AT_SETUP([SSL db: implementation])
+AT_KEYWORDS([ovsdb server positive ssl $5])
+AT_SKIP_IF([test "$HAVE_OPENSSL" = no])
+PKIDIR=$abs_top_builddir/tests
+AT_SKIP_IF([expr "$PKIDIR" : ".*[ 	'\"
+\\]"])
+AT_DATA([schema],
+  [[{"name": "mydb",
+     "tables": {
+       "SSL": {
+         "columns": {
+           "private_key": {"type": "string"},
+           "certificate": {"type": "string"},
+           "ca_cert": {"type": "string"}}}}}
+]])
+AT_CHECK([ovsdb-tool create db schema], [0], [stdout], [ignore])
+AT_CHECK(
+  [[ovsdb-tool transact db \
+     '["mydb",
+       {"op": "insert",
+        "table": "SSL",
+        "row": {"private_key": "'"$PKIDIR/testpki-privkey2.pem"'",
+                "certificate": "'"$PKIDIR/testpki-cert2.pem"'",
+                "ca_cert": "'"$PKIDIR/testpki-cacert.pem"'"}}]']],
+  [0], [ignore], [ignore])
+AT_CHECK([perl $srcdir/choose-port.pl], [0], [stdout])
+SSL_PORT=`cat stdout`
+AT_CHECK(
+  [ovsdb-server --detach --no-chdir --pidfile="`pwd`"/pid \
+        --private-key=db:SSL,private_key \
+        --certificate=db:SSL,certificate \
+        --ca-cert=db:SSL,ca_cert \
+         --remote=pssl:$SSL_PORT:127.0.0.1 --unixctl="`pwd`"/unixctl db],
+  [0], [ignore], [ignore])
+AT_CHECK(
+  [[ovsdb-client \
+        --private-key=$PKIDIR/testpki-privkey.pem \
+        --certificate=$PKIDIR/testpki-cert.pem \
+        --ca-cert=$PKIDIR/testpki-cacert.pem \
+        transact ssl:127.0.0.1:$SSL_PORT \
+        '["mydb",
+          {"op": "select",
+           "table": "SSL",
+           "where": [],
+           "columns": ["private_key"]}]']], 
+  [0], [stdout], [ignore], [test ! -e pid || kill `cat pid`])
+cat stdout >> output
+AT_CHECK_UNQUOTED(
+  [perl $srcdir/uuidfilt.pl output], [0], 
+  [[[{"rows":[{"private_key":"$PKIDIR/testpki-privkey2.pem"}]}]
+]], [ignore], [test ! -e pid || kill `cat pid`])
+OVSDB_SERVER_SHUTDOWN
+AT_CLEANUP
+
+AT_SETUP([compacting online])
+AT_KEYWORDS([ovsdb server compact])
+OVS_RUNDIR=`pwd`; export OVS_RUNDIR
+ordinal_schema > schema
+dnl Make sure that "ovsdb-tool create" works with a dangling symlink for
+dnl the database and the lockfile, creating the target of each symlink rather
+dnl than replacing the symlinks with regular files.
+mkdir dir
+ln -s dir/db db
+ln -s dir/.db.~lock~ .db.~lock~
+AT_SKIP_IF([test ! -h db || test ! -h .db.~lock~])
+AT_CHECK([ovsdb-tool create db schema], [0], [ignore], [ignore])
+dnl Start ovsdb-server.
+AT_CHECK([ovsdb-server --detach --no-chdir --pidfile="`pwd`"/pid --unixctl="`pwd`"/unixctl --remote=punix:socket --log-file="`pwd`"/ovsdb-server.log db], [0], [ignore], [ignore])
+AT_CAPTURE_FILE([ovsdb-server.log])
+dnl Do a bunch of random transactions that put crap in the database log.
+AT_CHECK(
+  [[for pair in 'zero 0' 'one 1' 'two 2' 'three 3' 'four 4' 'five 5'; do
+      set -- $pair
+      ovsdb-client transact unix:socket '
+        ["ordinals",
+         {"op": "insert",
+          "table": "ordinals",
+          "row": {"name": "'$1'", "number": '$2'}},
+         {"op": "comment",
+          "comment": "add row for '"$pair"'"}]'
+      ovsdb-client transact unix:socket '
+        ["ordinals",
+         {"op": "delete",
+          "table": "ordinals",
+          "where": [["number", "==", '$2']]},
+         {"op": "comment",
+          "comment": "delete row for '"$2"'"}]'
+      ovsdb-client transact unix:socket '
+        ["ordinals",
+         {"op": "insert",
+          "table": "ordinals",
+          "row": {"name": "'$1'", "number": '$2'}},
+         {"op": "comment",
+          "comment": "add back row for '"$pair"'"}]'
+    done]],
+  [0], [stdout], [ignore], [test ! -e pid || kill `cat pid`])
+dnl Check that all the crap is in fact in the database log.
+AT_CHECK([[perl $srcdir/uuidfilt.pl db | grep -v ^OVSDB | sed 's/"_date":[0-9]*/"_date":0/' | test-json --multiple -]], [0],
+  [[{"cksum":"12345678 9","name":"ordinals","tables":{"ordinals":{"columns":{"name":{"type":"string"},"number":{"type":"integer"}},"indexes":[["number"]]}},"version":"5.1.3"}
+{"_comment":"add row for zero 0","_date":0,"ordinals":{"<0>":{"name":"zero"}}}
+{"_comment":"delete row for 0","_date":0,"ordinals":{"<0>":null}}
+{"_comment":"add back row for zero 0","_date":0,"ordinals":{"<1>":{"name":"zero"}}}
+{"_comment":"add row for one 1","_date":0,"ordinals":{"<2>":{"name":"one","number":1}}}
+{"_comment":"delete row for 1","_date":0,"ordinals":{"<2>":null}}
+{"_comment":"add back row for one 1","_date":0,"ordinals":{"<3>":{"name":"one","number":1}}}
+{"_comment":"add row for two 2","_date":0,"ordinals":{"<4>":{"name":"two","number":2}}}
+{"_comment":"delete row for 2","_date":0,"ordinals":{"<4>":null}}
+{"_comment":"add back row for two 2","_date":0,"ordinals":{"<5>":{"name":"two","number":2}}}
+{"_comment":"add row for three 3","_date":0,"ordinals":{"<6>":{"name":"three","number":3}}}
+{"_comment":"delete row for 3","_date":0,"ordinals":{"<6>":null}}
+{"_comment":"add back row for three 3","_date":0,"ordinals":{"<7>":{"name":"three","number":3}}}
+{"_comment":"add row for four 4","_date":0,"ordinals":{"<8>":{"name":"four","number":4}}}
+{"_comment":"delete row for 4","_date":0,"ordinals":{"<8>":null}}
+{"_comment":"add back row for four 4","_date":0,"ordinals":{"<9>":{"name":"four","number":4}}}
+{"_comment":"add row for five 5","_date":0,"ordinals":{"<10>":{"name":"five","number":5}}}
+{"_comment":"delete row for 5","_date":0,"ordinals":{"<10>":null}}
+{"_comment":"add back row for five 5","_date":0,"ordinals":{"<11>":{"name":"five","number":5}}}
+]], [], [test ! -e pid || kill `cat pid`])
+dnl Dump out and check the actual database contents.
+AT_CHECK([[ovsdb-client dump unix:socket ordinals]],
+  [0], [stdout], [ignore])
+AT_CHECK([perl $srcdir/uuidfilt.pl stdout], [0], [dnl
+ordinals table
+_uuid                                name  number
+------------------------------------ ----- ------
+<0> five  5     @&t@
+<1> four  4     @&t@
+<2> one   1     @&t@
+<3> three 3     @&t@
+<4> two   2     @&t@
+<5> zero  0     @&t@
+], [], [test ! -e pid || kill `cat pid`])
+dnl Now compact the database in-place.
+AT_CHECK([[ovs-appctl -t "`pwd`"/unixctl ovsdb-server/compact]],
+  [0], [], [ignore], [test ! -e pid || kill `cat pid`])
+dnl Make sure that "db" is still a symlink to dir/db instead of getting
+dnl replaced by a regular file, ditto for .db.~lock~.
+AT_CHECK([test -h db])
+AT_CHECK([test -h .db.~lock~])
+AT_CHECK([test -f dir/db])
+AT_CHECK([test -f dir/.db.~lock~])
+dnl We can't fully re-check the contents of the database log, because the
+dnl order of the records is not predictable, but there should only be 4 lines
+dnl in it now.
+AT_CAPTURE_FILE([db])
+AT_CHECK([test `wc -l < db` -eq 4], [0], [], [],
+  [test ! -e pid || kill `cat pid`])
+dnl And check that the dumped data is the same too:
+AT_CHECK([ovsdb-client dump unix:socket ordinals], [0], [stdout], [ignore],
+  [test ! -e pid || kill `cat pid`])
+AT_CHECK([perl $srcdir/uuidfilt.pl stdout], [0], [dnl
+ordinals table
+_uuid                                name  number
+------------------------------------ ----- ------
+<0> five  5     @&t@
+<1> four  4     @&t@
+<2> one   1     @&t@
+<3> three 3     @&t@
+<4> two   2     @&t@
+<5> zero  0     @&t@
+], [], [test ! -e pid || kill `cat pid`])
+dnl Now do some more transactions.
+AT_CHECK(
+  [[ovsdb-client transact unix:socket '
+     ["ordinals",
+      {"op": "delete",
+       "table": "ordinals",
+       "where": [["number", "<", 3]]}]']],
+  [0], [[[{"count":3}]
+]], [ignore], [test ! -e pid || kill `cat pid`])
+dnl There should be 6 lines in the log now.
+AT_CHECK([test `wc -l < db` -eq 6], [0], [], [],
+  [test ! -e pid || kill `cat pid`])
+dnl Then check that the dumped data is correct.
+AT_CHECK([ovsdb-client dump unix:socket ordinals], [0], [stdout], [ignore],
+  [test ! -e pid || kill `cat pid`])
+AT_CHECK([perl $srcdir/uuidfilt.pl stdout], [0], [dnl
+ordinals table
+_uuid                                name  number
+------------------------------------ ----- ------
+<0> five  5     @&t@
+<1> four  4     @&t@
+<2> three 3     @&t@
+], [], [test ! -e pid || kill `cat pid`])
+OVSDB_SERVER_SHUTDOWN
+AT_CLEANUP
+
+AT_BANNER([OVSDB -- ovsdb-server transactions (SSL sockets)])
+
+# OVSDB_CHECK_EXECUTION(TITLE, SCHEMA, TRANSACTIONS, OUTPUT, [KEYWORDS])
+#
+# Creates a database with the given SCHEMA, starts an ovsdb-server on
+# that database, and runs each of the TRANSACTIONS (which should be a
+# quoted list of quoted strings) against it with ovsdb-client one at a
+# time.
+#
+# Checks that the overall output is OUTPUT, but UUIDs in the output
+# are replaced by markers of the form <N> where N is a number.  The
+# first unique UUID is replaced by <0>, the next by <1>, and so on.
+# If a given UUID appears more than once it is always replaced by the
+# same marker.
+#
+# TITLE is provided to AT_SETUP and KEYWORDS to AT_KEYWORDS.
+m4_define([OVSDB_CHECK_EXECUTION], 
+  [AT_SETUP([$1])
+   AT_KEYWORDS([ovsdb server positive ssl $5])
+   AT_SKIP_IF([test "$HAVE_OPENSSL" = no])
+   OVS_RUNDIR=`pwd`; export OVS_RUNDIR
+   $2 > schema
+   AT_CHECK([perl $srcdir/choose-port.pl], [0], [stdout])
+   SSL_PORT=`cat stdout`
+   PKIDIR=$abs_top_builddir/tests
+   AT_CHECK([ovsdb-tool create db schema], [0], [stdout], [ignore])
+   AT_CHECK([ovsdb-server --detach --no-chdir --pidfile="`pwd`"/pid --private-key=$PKIDIR/testpki-privkey2.pem --certificate=$PKIDIR/testpki-cert2.pem --ca-cert=$PKIDIR/testpki-cacert.pem --remote=pssl:$SSL_PORT:127.0.0.1 --unixctl="`pwd`"/unixctl db], [0], [ignore], [ignore])
+   m4_foreach([txn], [$3], 
+     [AT_CHECK([ovsdb-client --private-key=$PKIDIR/testpki-privkey.pem --certificate=$PKIDIR/testpki-cert.pem --ca-cert=$PKIDIR/testpki-cacert.pem transact ssl:127.0.0.1:$SSL_PORT 'txn'], [0], [stdout], [ignore],
+     [test ! -e pid || kill `cat pid`])
+cat stdout >> output
+])
+   AT_CHECK([perl $srcdir/uuidfilt.pl output], [0], [$4], [ignore],
+            [test ! -e pid || kill `cat pid`])
+   OVSDB_SERVER_SHUTDOWN
+   AT_CLEANUP])
+
+EXECUTION_EXAMPLES
+
+AT_BANNER([OVSDB -- ovsdb-server transactions (TCP sockets)])
+
+AT_SETUP([ovsdb-client get-schema-version - tcp socket])
+AT_KEYWORDS([ovsdb server positive tcp])
+ordinal_schema > schema
+AT_CHECK([perl $srcdir/choose-port.pl], [0], [stdout])
+TCP_PORT=`cat stdout`
+AT_CHECK([ovsdb-tool create db schema], [0], [ignore], [ignore])
+AT_CHECK([ovsdb-server --detach --no-chdir --pidfile="`pwd`"/pid --unixctl="`pwd`"/unixctl --remote=ptcp:$TCP_PORT:127.0.0.1 db], [0], [ignore], [ignore])
+AT_CHECK([ovsdb-client get-schema-version tcp:127.0.0.1:$TCP_PORT ordinals], [0], [5.1.3
+])
+OVSDB_SERVER_SHUTDOWN
+AT_CLEANUP])
+
+# OVSDB_CHECK_EXECUTION(TITLE, SCHEMA, TRANSACTIONS, OUTPUT, [KEYWORDS])
+#
+# Creates a database with the given SCHEMA, starts an ovsdb-server on
+# that database, and runs each of the TRANSACTIONS (which should be a
+# quoted list of quoted strings) against it with ovsdb-client one at a
+# time.
+#
+# Checks that the overall output is OUTPUT, but UUIDs in the output
+# are replaced by markers of the form <N> where N is a number.  The
+# first unique UUID is replaced by <0>, the next by <1>, and so on.
+# If a given UUID appears more than once it is always replaced by the
+# same marker.
+#
+# TITLE is provided to AT_SETUP and KEYWORDS to AT_KEYWORDS.
+m4_define([OVSDB_CHECK_EXECUTION],
+  [AT_SETUP([$1])
+   AT_KEYWORDS([ovsdb server positive tcp $5])
+   OVS_RUNDIR=`pwd`; export OVS_RUNDIR
+   $2 > schema
+   AT_CHECK([perl $srcdir/choose-port.pl], [0], [stdout])
+   TCP_PORT=`cat stdout`
+   PKIDIR=$abs_top_builddir/tests
+   AT_CHECK([ovsdb-tool create db schema], [0], [stdout], [ignore])
+   AT_CHECK([ovsdb-server --detach --no-chdir --pidfile="`pwd`"/pid --remote=ptcp:$TCP_PORT:127.0.0.1 --unixctl="`pwd`"/unixctl db], [0], [ignore], [ignore])
+   m4_foreach([txn], [$3],
+     [AT_CHECK([ovsdb-client transact tcp:127.0.0.1:$TCP_PORT 'txn'], [0], [stdout], [ignore],
+     [test ! -e pid || kill `cat pid`])
+cat stdout >> output
+])
+   AT_CHECK([perl $srcdir/uuidfilt.pl output], [0], [$4], [ignore],
+            [test ! -e pid || kill `cat pid`])
+   OVSDB_SERVER_SHUTDOWN
+   AT_CLEANUP])
+
+EXECUTION_EXAMPLES
+
+AT_BANNER([OVSDB -- transactions on transient ovsdb-server])
+
+# OVSDB_CHECK_EXECUTION(TITLE, SCHEMA, TRANSACTIONS, OUTPUT, [KEYWORDS])
+#
+# Creates a database with the given SCHEMA and runs each of the
+# TRANSACTIONS (which should be a quoted list of quoted strings)
+# against it with ovsdb-client one at a time.  Each ovsdb-client
+# is run against a separately started ovsdb-server that executes
+# only that single transaction.  (The idea is that this should
+# help to ferret out any differences between what ovsdb-server has
+# in memory and what actually gets committed to disk.)
+#
+# Checks that the overall output is OUTPUT, but UUIDs in the output
+# are replaced by markers of the form <N> where N is a number.  The
+# first unique UUID is replaced by <0>, the next by <1>, and so on.
+# If a given UUID appears more than once it is always replaced by the
+# same marker.
+#
+# TITLE is provided to AT_SETUP and KEYWORDS to AT_KEYWORDS.
+m4_define([OVSDB_CHECK_EXECUTION], 
+  [AT_SETUP([$1])
+   AT_KEYWORDS([ovsdb server positive transient $5])
+   OVS_RUNDIR=`pwd`; export OVS_RUNDIR
+   $2 > schema
+   AT_CHECK([ovsdb-tool create db schema], [0], [stdout], [ignore])
+   m4_foreach([txn], [$3], 
+     [AT_DATA([txnfile], [ovsdb-client transact unix:socket 'txn'
+])
+      AT_CHECK([ovsdb-server --remote=punix:socket --unixctl="`pwd`"/unixctl db --run="sh txnfile"], [0], [stdout], [ignore])
+      cat stdout >> output
+])
+   AT_CHECK([perl $srcdir/uuidfilt.pl output], [0], [$4], [ignore])
+   AT_CLEANUP])
+
+EXECUTION_EXAMPLES
