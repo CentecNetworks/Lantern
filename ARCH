@@ -1,0 +1,535 @@
+                     Design of Centec Openflow Switching System
+                     ==========================================
+
+This document describes brief design of Centec Openflow Switching System,
+we will focus on OVS porting and Centec adaptation layer. 
+
+
+1. Overview of Openflow and OVS
+===============================
+OpenFlow is a communications protocol that gives access to the forwarding plane 
+of a network switch or router over the network. In simpler terms, OpenFlow allows
+the path-of-netwok-packets-through-the-network-of-switches to be determined by 
+software running on a separate server. This separation of the control from the 
+forwarding allows for more sophisticated traffic management than feasible using 
+routing protocols. Its inventors consider OpenFlow an enabler of "Software Defined
+ Networking (SDN)".
+
+In a classical router or switch, the fast packet forwarding (data path) and the 
+high level routing decisions (control path) occur on the same device. 
+An OpenFlow Switch separates these two functions. The data path portion still 
+resides on the switch, while high-level routing decisions are moved to a separate 
+controller, typically a standard server. 
+
+The OpenFlow Switch and Controller communicate via the OpenFlow protocol, 
+which defines messages, such as packet-received, send-packet-out, 
+modify-forwarding-table, and get-stats.
+
+The data path of an OpenFlow Switch presents a clean flow table abstraction; 
+each flow table entry contains a set of packet fields to match, and an action 
+(such as send-out-port, modify-field, or drop). 
+When an OpenFlow Switch receives a packet it has never seen before, for which it
+has no matching flow entries, it sends this packet to the controller. The controller 
+then makes a decision on how to handle this packet. It can drop the packet, 
+or it can add a flow entry directing the switch on how to forward similar packets 
+in the future.
+
+OpenFlow allows you to easily deploy innovative routing and switching protocols 
+in your network. It is used for applications such as virtual machine mobility; 
+high-security networks and next generation IP based mobile networks.
+
+Open vSwitch (OVS) is a multilayer software switch licensed under the 
+open source Apache 2 license. It supports Openflow protocol 1.0/1.3 plus numerous 
+extensions to it (Nicira Extension).
+
+Centec has ported OVS into its hardware based switch: V330 under Apache 2.0 license.
+The datapath is based on its carrier-grade IP/Ethernet switching silicon (TransWarp Series).
+An adapter layer called ofp_adapt wraps all hardware/SDK details and provides 
+adapter layer APIs (OFP_API) to Open vSwitch (ofproto/netdev). 
+
+This document will be focus on the high-level design of the adapter layer created
+by Centec, and how it relates to OVS, Centec SDK and linecard manager.
+
+Before you read this document, you need to have some understandings of OVS,
+Centec switching silicon architecture and be familiar with the concept of Centec SDK. 
+
+You may refer to the documents: Humber SDK Guide, product spec and user guide 
+under directory "system/docs".
+For more details of Centec hardware and switching silicon, 
+please refer to Centec Website (www.centecnetworks.com) or contact us.
+
+
+2. Architecture Design
+======================
+Open vSwitch 1.10.0(OVS) was ported to Centec switching system as daemon. 
+Centec has created an adapter layer between OVS and Centec switch SDK to provide
+hardware flow matching and forwarding for Openflow. The standard ovs tools such
+as ovs-ofctl, ovs-vsctl, ovsdb-server, ovsdb-tool are also integrated into the system.
+
+
+2.1 OVS Architectural Overview
+==============================
+The following diagram shows the very high-level architecture of Open
+vSwitch.
+
+                   +-------------------+
+                   |    ovs-vswitchd   |<-->ovsdb-server
+                   +-------------------+
+                   |      ofproto      |<-->OpenFlow controllers
+                   +--------+-+--------+
+                   | netdev | | ofproto|
+                   +--------+ |provider|
+                   | netdev | +--------+
+                   |provider|
+                   +--------+
+
+The most important modules for porting are:
+
+    - "ovs-vswitchd" is the main Open vSwitch userspace program, in
+      vswitchd/.  It reads the desired Open vSwitch configuration from
+      the ovsdb-server program over an IPC channel and passes this
+      configuration down to the "ofproto" library.  It also passes
+      certain status and statistical information from ofproto back
+      into the database.
+
+    - "ofproto" is the Open vSwitch library, in ofproto/, that
+      implements an OpenFlow switch.  It talks to OpenFlow controllers
+      over the network and to switch hardware or software through an
+      "ofproto provider".
+
+    - "netdev" is the Open vSwitch library, in lib/netdev.c, that
+      abstracts interacting with network devices, that is, Ethernet
+      interfaces.  The netdev library is a thin layer over "netdev
+      provider" code.
+
+
+2.2 Layered Design of Centec Openflow Switching System
+======================================================
+Centec has created a low-level adapter layer to implement the "netdev-provider" 
+and the "ofproto-provider". This adapter layer is located between OVS provider and
+Centec SDK/Line Card Manager(LCM). The Line card manager is responsible to manage
+the hardware components such as PHYs,FANs,LEDs,BUSes on board. Centec SDK is 
+responsible to manage and access switching silicon.  
+
+The architecture of Centec ported OVS is shown below:
+
+                   +-------------------+
+                   |    ovs-vswitchd   |<-->ovsdb-server
+                   +-------------------+
+                   |      ofproto      |<-->OpenFlow controllers
+ OVS               +--------+-+--------+
+                   | netdev | | ofproto|
+                   +--------+ |provider|
+                   | netdev | +--------+
+                   |provider|     |
+                   +--------+     |
+                       |          |
+         --------------------------------------------
+                       |          |                      
+                   +-------------------+
+                   | Centec adapt layer|
+                   |   for Openflow    | <------------+
+                   +-------------------+              |
+                       |          |                   |
+                   +----------+ +------+              |
+                   |Line Card | |      |              |
+ Centec            | Manager  | |Centec|      PacketIn/PacketOut
+                   +----------+ | SDK  |              |
+                   |  driver  | |      |              |
+                   +----------+ +------+              |
+                      |           |                   |
+             ---------------------------------        |
+        Kernel        |           |                   |
+             ---------------------------------        |
+                      |           |                   |
+                  +----------+ +---------+            |
+        Hardware  |  other   | | Centec  | <----------+
+                  |componentS| | silicon |                        
+                  +----------+ +---------+
+
+
+2.3 Source code overview
+========================
+The source code of OVS,Centec adapter layer,SDK and LCM are located in the directory 
+"system" shown below:
+
+    system  |
+            + adapt            Centec adaptation layer source code for openflow
+              | adpt           adapter layer codes for each openflow module
+              | api            adapter layer api
+              | doc            adapter layer doxygen configuration file
+              | hal            adapter layer hardware abstract layer (hal)
+              | lib            adapter layer private library
+              | ovs            Centec implementation to ovs ofproto-provider and netdev-provider
+            + prebuilt         pre-built binaries and libraries
+              | bin            pre-built kernel modules
+              | lib            pre-built libs: line card manager and drivers
+            + ovs              open vswitch(ovs) source code
+            ...
+
+The line card manager and drivers are pre-compiled libraries. The OVS, adapter layer,
+SDK, line card manager and drivers will be compiled as a standalone program called
+"ovs-vswitchd".
+
+
+3. Module Design
+================
+Openflow initialization procedures and module designs are discussed in this
+section. Major modules in adapter layer include: flow table, flow actions, 
+flow operations, counters, ports, software forwarding and adapter layer database.
+
+
+3.1 Layered module design of openflow system
+============================================
+The major layered modules are shown below in the diagram:
+
+              +--------------+   +--------------------------------------------------------+
+OVS tools     |  ovs-vsctl   |   |                     ovs-ofctl                          |
+              +--------------+   +-----------------+----------------+---------------------+
+              | add/del port |   |add/mod/del flows|dump flow/table |dump/mod port        | 
+              |              |   |                 |stats           |stats/features       |
+              +--------------+   +-----------------+----------------+---------------------+
+ RPC calls           |                    |                |                   |
+              +--------------+            |                |                   |
+              | OVSDB Server |            |                |                   |
+              +--------------+            |                |                   |
+                     |                    |                |                   |
+              +---------------------------------------------------------------------------+
+vswitchd      |                                  ovs-vswitchd                             |
+              +----------------------------------------------------+-+--------------------+
+provider      |                  ofproto-provider                  | |   netdev-provider  |
+--------------+----------------------------------------------------+ +--------------------+-
+              |                    ofproto-ctc                     | | netdev-ctc/vport   |
+Centec        +----------------+-------------------+---------------+ +--------------------+
+implementation| port_add       | rule_construct    | rule_get_stats| | get/set carrier    |
+              | port_del       | rule_destruct     | get_tables    | | get/set stats      |
+              |                | rule_modify_action|               | | get/set features   |
+              +----------------+-------------------+---------------+ +--------------------+
+                      |                  |                  |                  |
+              +----------------+-------------------+----------------+---------------------+-------------+
+adapter layer | ADPT:PORT      | ADPT:FLOW         | ADPT:FLOW      | ADPT:PORT/NETDEV    | ADPT:DB     |
+              +----------------+-------------------+----------------+---------------------+-------------+
+              | create port    | add_flow          | get_flow_stats | get_of_fea_info     | add/del/get |
+              | destroy port   | del_flow          |                | get_port_stats      | port/flow   |
+              |                | modify_flow_action|                |                     | db          |
+              +----------------+-------------------+----------------+---------------------+-------------+
+                      |                  |                  |             |          |  
+              +----------------+-------------------+----------------+------------+--------+
+SDK layer     | CTC:PORT       | CTC:ACL/QOS       | CTC:ACL/QOS    | CTC:ACL/QOS|LCM:PORT|
+              |                | CTC:NEXTHOP       |                | CTC:PORT   |        |
+              +----------------+-------------------+----------------+------------+--------+           
+
+
+3.2 Openflow initialization
+===========================
+Before start of OVS main function, various modules should be initialized
+1.  Initialize Linecard manager, which handles system drivers.
+2.  Initialize SDK, which handles the Centec switching silicon.
+3.  Initialize Openflow adapter layer database.
+4.  Initialize ports and netdev interfaces in SDK and Linux kernel.
+5.  Initialize VLANs in SDK.
+6.  Insert default ACL/QoS entries to the system.
+There are 2 default entries (MAC entry and IP entry) with lowest priority will
+be inserted into the system. They will be used to match all mismatched flows 
+and redirect them to CPU. OVS will handle further processes (eg. forward to controller).
+7.  Initialize ASIC interrupts.
+8.  Start OVS main function.
+
+Related adapter layer source file: ofp_master.c, adpt.c
+
+
+3.3 Openflow flow table
+=======================
+The Openflow flow entries in flow table consists header fields, counters and actions.
+This section will discuss the design of flow table. ACL/QoS module in SDK is 
+used to implement this feature.
+
+3.3.1 Openflow header fields
+----------------------------
+The header fields (matching fields) used to match against flow entries in Openflow
+includes: Ingress port, Ether source, Ether dst, Ether type, VLAN id, 
+VLAN priority, IP src, IP dst, IP proto, IP ToS bits, TCP/UDP src port, 
+TCP/UDP dst port etc.
+
+The matching fields can be mapped to ACL/QoS keys in SDK. 
+1.  User needs to specify a ACL/QoS port label to identify the ingress port. 
+If the ingress port in a flow is wildcarded (ie. from any ports), 
+a global ACL/QoS label should be used.
+2.  For different ethertype, different ACL/QoS keys should be used, 
+eg. If ethertype is IP, the IPv4 key should be used. For other ethertype, 
+mac key should be used.
+
+Related adapter layer source file: adpt_flow.c
+
+3.3.2 Openflow actions
+----------------------
+The following actions are supported in the design: drop, forward to ports 
+(includes physical ports, local ports, reserved ports. Reserved ports include: 
+in_port, all, controller and local), logical ports include: GRE port 
+and modify fields (include set vlan id, modify Ethernet source MAC address and 
+modify Ethernet destination MAC address etc).
+
+In Centec SDK, flow actions can be implemented using the data structure nexthop.
+Nexthops can be created by users to define specific action list, and there are 
+two predefined nexthops: discard (nexthop ID: 1), and ForwardToCPU (nexthop ID: 2).
+1.  Drop
+Assign the predefined nexthop: discard (nexthop ID: 1) to the flow entry.
+2.  Forward to ports
+a)  Physical ports
+Create a user defined unicast nexthop for each port, and assign the nexthop to 
+the flow entry.
+b)  Reserved port: ALL
+Create a user defined multicast nexthop, add all physical ports as member ports
+to the multicast nexthop. Assign the nexthop to the flow.
+c)  Reserved port: Controller
+Assign the predefined nexthop: ForwardToCPU (nexthop ID: 2) to the flow entry. 
+OVS will handle the further process.
+3.  Modify fields:
+Create a user defined flex-nexthop, assign the relevant modification fields and
+assign the nexthop to the flow entry.
+
+Related adapter layer source file: adpt_flow.c, adpt_nexthop.c
+
+3.3.3 Openflow multiple actions
+-------------------------------
+For multiple actions, multicast nexthops will be used, 
+and Modify-Field actions will be inherited for each subsequent forward action. 
+1.  Check the number of forward actions in the action list. The number of 
+physical/logical output ports is limited to 128.
+2.  Check the statistics resource limitation of the physical/logical output ports.
+(currently we support 15k outputs).
+3.  Create multicast nexthop for the flow actions list.
+4.  Create a multicast group.
+5.  Add each flex-nexthop as member to the multicast nexthop.
+
+Related adapter layer source file: adpt_flow.c, adpt_nexthop.c
+
+3.3.4 Create Nexthop
+--------------------
+To create an output means to create a next-hop for the silicon chips,
+for multiple outputs, we need to create multiple next-hops for a single flow.
+We need two parameters to create a next-hop.
+1.  next-hop id
+Next-hop ID is a logical conception, its actually an index for a next-hop entry.
+It must be unique in the openflow system.
+There're two kinds of default next-hop ID in the SDK, 
+NEXTHOP_ID: DROP: which means matching packets will be dropped, 
+NEXTHOP_ID: ForwardToCPU: which means matching packets will be forwarded to CPU.
+
+Due to multiple actions may consist actions that will modify packet fields, 
+we need to allocate "flex" next-hops instead of normal unicast nexthop.
+To allocate a flex next-hop, we need to set the following parameters:
+   * Output port id
+   * source MAC address/destination MAC address to be modified
+   * VLAN ID to be modified
+   * etc.
+
+2.  next-hop offset
+Next-hop offset is a physical concept, which means the nexthop entry's physical
+offset in the silicon chip. It must be unique in the whole system. 
+
+Related adapter layer source file: adpt_nexthop.c
+
+3.3.5 Create multicast group and multicast member
+-------------------------------------------------
+Multicast nexthop/group can be used to create multi-output actions, 
+output ports in actions are multicast members that need to be added to multicast group.
+
+Related adapter layer source file: adpt_nexthop.c
+
+
+3.4 Openflow flow operation
+===========================
+Openflow flow operations include: add flow, modify flow actions and delete flow. 
+
+3.4.1 add flow
+--------------
+The operation "add flow" includes the following steps:
+1.  Validate flow entry fields.
+2.  Check if table is full.
+3.  Allocate label id and label type.
+4.  Map flow keys.
+5.  Map flow actions.
+6.  Find out the entry_id according to the flow priority.
+7.  Add entry to SDK.
+8.  Error handlings.
+
+Related adapter layer source file: adpt_flow.c
+
+3.4.2 modify flow action
+------------------------
+The operation "modify flow action" includes the following steps:
+1.  Validate flow entry fields.
+2.  Lookup label id and label type.
+3.  Map flow actions.
+4.  Set entry actions to SDK.
+5.  Error handlings.
+
+Related adapter layer source file: adpt_flow.c
+
+3.6.3 delete flow
+-----------------
+The operation "delete flow" includes the following steps:
+1.  Lookup label id and label type.
+2.  Remove the entry from SDK.
+
+Related adapter layer source file: adpt_flow.c
+
+3.6.4 priority
+--------------
+Openflow defines that each flow has a priority associated. 
+The higher priority flow must match before lower priority ones, and if multiple
+flows have the same priority, the switch is free to choose any ordering. 
+To achieve the flow priority feature, we need the following steps:
+1. Initialize the ACL/QoS module with sort mode: PER_SYSTEM.
+2. Since the multiple flows can have the same priority value, our solution is 
+to maintain a new database consists of a linked list and a hash map. 
+The linked list maintains all valid priorities in descend order. 
+The hash map maintains the map between priorities and entry-ids. 
+By lookup the database, user should be able to decide the pre-entry-id 
+(the entry id that should be inserted after).
+
+Related adapter layer source file: adpt_flow.c
+
+3.6.5 timeout
+-------------
+Openflow defines that each flow has hard_timeout and idle_timeout associated.
+This is achieved by software timer thread aging flows.
+
+Related adapter layer source file: adpt_flow.c, adpt_flow_db.c
+
+
+3.7 Flow counter
+================
+The flow counters consist of received packets, received bytes, duration (seconds)
+and duration (nanoseconds). 
+1. Received packets.
+The Received Packets counter of a flow can be fetched from its corresponding 
+ACL/QoS entry in SDK.
+2. Received bytes
+The Received Bytes counter of a flow can be fetched from its corresponding 
+ACL/QoS entry in SDK.
+3.  Duration
+The duration counter is maintained in OVS.
+
+Related adapter layer source file: adpt_flow.c
+
+
+3.8 Table counter
+=================
+The table counters consist of packet matches, packet lookups and active entries.
+1.  Packet matches
+The packet matches counter consists of two parts:
+* the sum of packet count from all active ACL/QoS entries.
+* the sum of packet count from all aged ACL/QoS entries.
+
+2.  Packet lookups
+The packet lookups counter consists of two parts:
+* the sum of packet miss count from ACL/QoS default entries.
+* the packet matches counter.
+
+3.  Active entries
+The active entries counter is maintained in OVS.
+
+Related adapter layer source file: adpt_flow.c, ofproto-ctc.c
+
+
+3.9 Openflow port
+=================
+Openflow port related features that handle by adapter layer include: 
+port admin status, port link status, port counters, port link features and 
+packet decapsulation. Other port related features such as send/receive packets, 
+get_mtu, get_etheraddr, set_etheraddr etc will be handled by OVS.
+
+3.9.1 Openflow port admin status
+--------------------------------
+Steps to enable/disable port admin status:
+1.  Enable/Disable PHY/SFP by calling APIs in module LCM_PORT.
+2.  Set netdev interface up/down status in Linux kernel.
+
+3.9.2 Openflow port link status
+-------------------------------
+Steps to get port link status:
+1.  When there is link-status-change interrupts from any ports, module LCM_PORT 
+will report the event to adapter layer, and the adapter layer will store the 
+link status in an array.
+2.  OVS will periodically polling the link status from this array, and do 
+further process.
+
+3.9.3 Openflow port counters
+----------------------------
+Steps to get port counters:
+1.  Port counters will be fetched directly from SDK.
+2.  Unsupported counters will be set as UINT64_MAX according to Openflow Spec.
+
+3.9.4 Openflow port link features
+Port link features include: current link speed/duplex, supported link speed/duplex,
+peer link speed/duplex and advertised link speed/duplex.
+The steps to get port link features:
+1.  When there is link-status-change interrupts from any ports, module LCM_PORT 
+will report  the link features to adapter layer, and the adapter layer will store the
+link features in arrays: 
+2.  OVS will periodically polling the link features from the arrays, and do 
+further process.
+
+Related adapter layer source file: ofp_netdev_api.c, netdev-ctc.c, netdev-ctc-vport.c
+
+
+3.10 Openflow software forwarding and packet encapsulation/decapsulation
+========================================================================
+Some packets need to be forwarded or handled by OVS rather than Centec switching
+silicon, these packets include "packet-in" and "packet-out" packets.
+
+3.10.1 Packet-In
+----------------
+For the packets that need software forwarding, we will assign the predefined 
+nexthop: ForwardToCPU (nexthop ID: 2) and nexthop_ptr(flow_id) to the relevant 
+flow entries, those packets match the flow entries will be forwarded to a raw socket. 
+OVS will listen on the socket by netdev-ctc and do further process.
+
+The packets that forwarded to CPU from Centec switching silicon will be encapsulated
+a Centec property "bridge header". The bridge header size is 48 bytes, and it 
+contains the process result from IPE module in silicon, the process result includes:
+1.  where to forward the packet, represented by the destination map
+2.  what to do with the packet, represented by the nexthop pointer (nexthop_ptr, 
+used to identify the flow id).
+
+Since the packets that forwarded to CPU are encapsulated with bridge header, 
+we need to decapsulate the bridge header in the packet receiving function: 
+ofp_netdev_decap_upcall (ofp_api.c).
+
+The process of this function contains:
+1.  Check if this packet contains a bridge header, by checking if the ether_type
+ is 0x5A5A
+2.  Parse the bridge header, get the ingress port and flow_id of the packet
+3.  Strip the bridge header from the packet buffer
+
+3.10.1 Packet-Out
+-----------------
+For the packets need to be sent by "packet-out" message, we need to encapsulate
+the raw packet with "bridge header", the "bridge header" should contain 
+dest_id (identify output ports), nexthop_offset (identify set-actions), src-port
+(identify ingress port) and send the encapsulated packet to the raw socket, 
+Centec silicon will decapsulate the "bridge header" and forward the raw packet.
+The function to handle packet-out message is ofp_send_packet_out (ofp_api.c).
+
+Related adapter layer source file: ofp_api.c, ofproto-ctc.c, netdev-ctc.c
+
+
+3.11 Openflow adapter layer database
+==================================
+The ofp adapter layer also includes a database which is used to store the 
+information includes: 
+1.  Hardware ports/netdev interfaces properties and mappings.
+2.  Flow priority/aclqos entry_id mappings.
+3.  Nexthop IDs and related properties.
+4.  Flow IDs and related properties.
+5.  Tunnel related properties.
+
+Related adapter layer source file: adpt_*_db.c
+
+
+
+Reference
+=========
+[1] Open vSwitch DESIGN and PORTING guide
