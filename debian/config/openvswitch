@@ -1,0 +1,120 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          Centec Networks Co., Ltd.
+# Required-Start:    
+# Required-Stop: 
+# Default-Start:     2 3 4 5
+# Default-Stop:     0 1 6
+# Description: Start ovsdb-server and ovs-vswitchd daemon
+# Short-Description:    ovsdb-server and ovs-vswitchd daemon
+### END INIT INFO
+
+export PATH=$PATH:/usr/local/openvswitch/bin/
+export OVS_RUNDIR=/usr/local/openvswitch/var/run/ 
+
+. /lib/lsb/init-functions
+
+do_start () {
+    log_daemon_msg "Starting Open vSwitch" "ovs-vswitchd" || true
+    if [ ! -f /usr/local/openvswitch/bin/board_type_detect ] ; then
+        log_daemon_msg "Unable to start ovs, please reinstall it" "ovs-vswitchd" || true 
+        log_end_msg 1 || true
+        return 1
+    fi
+    /usr/local/openvswitch/bin/board_type_detect board_type > /dev/null 2>&1
+
+    if [ ! -c /dev/asic_allctrl ] ; then
+        mknod /dev/asic_allctrl c 99 0
+    fi
+    if [ ! -c /dev/ctc_hw ] ; then
+        mknod /dev/ctc_hw c 100 0
+    fi
+    if [ ! -c /dev/ctc_asic_normal ] ; then
+        mknod /dev/ctc_asic_normal c 101 0
+    fi
+    if [ ! -c /dev/ctc_asic_fatal ] ; then
+        mknod /dev/ctc_asic_fatal c 103 0
+    fi
+    
+    if [ ! -c /dev/mem ] ; then
+        mknod -m 660 /dev/mem c 1 1
+    fi 
+    
+    if [ ! -c /dev/urandom ] ; then
+        mknod -m 644 /dev/urandom c 1 9
+    fi
+    
+    if [ ! -c /dev/null ] ; then
+        mknod -m 666 /dev/null c 1 3
+    fi
+    
+    if [ ! -c /dev/console ] ; then
+        mknod -m 622 /dev/console c 5 1
+    fi
+
+    if [ ! -c /dev/i2c-0 ] ; then
+        mknod /dev/i2c-0 c 89 0
+    fi
+    
+    if [ ! -d /usr/local/openvswitch/var/run ] ; then
+        mkdir -p /usr/local/openvswitch/var/run
+    fi
+
+    if [ ! -f /usr/local/openvswitch/bin/ovsdb-server ]; then
+        log_daemon_msg "Unable to start ovs, please reinstall it" "ovs-vswitchd" || true 
+        log_end_msg 1 || true
+        return 1
+    fi
+    if [ ! -f /usr/local/openvswitch/bin/ovs-vswitchd ]; then
+        log_daemon_msg "Unable to start ovs, please reinstall it" "ovs-vswitchd" || true 
+        log_end_msg 1 || true
+        return 1
+    fi
+    /usr/local/openvswitch/bin/ovsdb-server /usr/local/openvswitch/etc/db/conf.db --remote=punix:/usr/local/openvswitch/var/run/db.sock --remote=db:Open_vSwitch,manager_options --pidfile=/usr/local/openvswitch/var/run/ovsdb-server.pid --unixctl=/usr/local/openvswitch/var/run/ovsdb-server.ctl --detach --verbose=ANY:syslog:off > /dev/null 2>&1
+    /usr/local/openvswitch/bin/ovs-vswitchd unix:/usr/local/openvswitch/var/run/db.sock --unixctl=/usr/local/openvswitch/var/run/ovs.ctl --pidfile=/usr/local/openvswitch/var/run/ovs-vswitchd.pid --verbose=ANY:syslog:err > /dev/null 2>&1 &
+    log_end_msg 0 || true
+}
+
+do_stop () {
+    log_daemon_msg "Stopping Open vSwitch" "ovs-vswitchd" || true
+    if [ -S /usr/local/openvswitch/var/run/ovs.ctl ]; then
+        /usr/local/openvswitch/bin/ovs-appctl -t /usr/local/openvswitch/var/run/ovs.ctl exit
+    fi
+    if [ -S /usr/local/openvswitch/var/run/ovsdb-server.ctl ]; then
+        /usr/local/openvswitch/bin/ovs-appctl -t  /usr/local/openvswitch/var/run/ovsdb-server.ctl exit
+    fi
+    log_end_msg 0 || true
+}
+
+do_status () {
+    if [ ! -f /usr/local/openvswitch/var/run/ovs-vswitchd.pid ] ; then
+        log_end_msg 1 || true
+        return 1
+    else
+        log_end_msg 0 || true
+        return 0
+    fi
+}
+
+case "$1" in
+  start)
+    do_start
+    ;;
+  restart)
+    do_stop
+    do_start
+    ;;
+  stop)
+    do_stop
+    ;;
+  status)
+    do_status
+    exit $?
+    ;;
+  *)
+    echo "Usage: $0 start|restart|stop" >&2
+    exit 3
+    ;;
+esac
+
+:
