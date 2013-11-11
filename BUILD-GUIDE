@@ -49,7 +49,7 @@ The source code tree is organized and listed below:
             + prebuilt         pre-built binaries and libraries
             + sdk              Centec SDK
             + third_party      third-party header files
-    out     +                  output binaries and images will be put here after user built the system                      
+            + out              output binaries and images will be put here after user built the system                      
 
 
 Building the basic VCOS image
@@ -128,7 +128,7 @@ Building and installing Open vSwitch(OVS) package
 
 You may follow the procedures below to build Open vSwitch running on Debian system:
 
-1. Configure the building environment, run script: configure.sh under the source directory: 'system'
+1. Configure the building environment, run script: configure.sh under the source directory: 'top'
     (You may skip this step if you have done it before)
 
         % chmod +x ./configure.sh 
@@ -141,7 +141,7 @@ You may follow the procedures below to build Open vSwitch running on Debian syst
         -j number, specify compile speed
         -d , _V330_DEBUG version
         
-2. Run make in the 'system' directory:
+2. Run make in the 'top' directory:
 
         % make ovs_package
 
