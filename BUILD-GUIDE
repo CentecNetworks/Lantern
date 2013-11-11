@@ -59,7 +59,7 @@ Once you have prepared the required building host, software and Centec VCOS dist
 you may follow the procedures below to build the 
 basic Linux image:
 
-1. Configure the building environment, run script: configure.sh under the source directory: 'system'
+1. Configure the building environment, run script: configure.sh under the source directory: 'top'
 
         % chmod +x ./configure.sh 
         % ./configure.sh -p /home/centec/mips/mips-2013.05
