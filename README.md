@@ -2,11 +2,16 @@
 
 
 ##Overview
-The Centec Openflow switching system: Lantern is the open source software package for Centec V330 52TX-RD switch. 
+"Lantern", the Industrial First Open Source Hardware Based Openflow Switch Implementation. 
 
-The Centec V330 Series Switch is based on Centec's TransWarp series switching silicon and the mature ToR switch hardware, integrated with the open source Open vSwitch and Centec's SDK to provide a complete system solution. Taking advantages of V330's friendly interface and Openness, users can easily develop the customized SDN (Software Defined Network) solutions to realize various networking visualization.
+Lantern is an open source implementation targeted at hardware based openflow switch, integrating Linux Debian 7.2 OS, Open vSwitch(OVS) with open source silicon SDK and adaption layer as a complte solution. SDN is a new approach to networking in which network control is decoupled from the data forwarding function and is directly programmable. One key techbology for SDN is Openflow. Implementing SDN via an open standard enables extraordinary agility while reducing service development and operational costs. Centec's Lantern release is intended to fuel the open, collaborative development process, facilitating research and development via a complete turnkey solution.  
 
-Leveraging Centec's high performance Ethernet switching silicon CTC6048, the solution provides 176Gbps wire-speed forwarding capability with abundant OpenFlow features. Currently, V330 provides 48x1GE RJ45/SFP network ports and 4x10GE SFP+ modular cards as uplinks. 
+Lantern running at a high-performance development platform, V330-52TX-RD, integrated with the most popular open source OVS stack. It can inter-operate with all mainstream OpenFlow controllers via the standard compliant OpenFlow interface on OVS. The development platform provides 48*1GE RJ45 network ports and 4*10GE SFP+ uplink ports with abundant OpenFlow features and the flexible editing capacity on packet and programmable match fields.
+V330-52TX-RD Development Platform Highlights:
+* Support 2.5K embedded flow entries with complete match field and stats
+* Support complete L2 to L4 match fields
+* Support per flow multiple actions
+* Support NvGRE, MPLS L2 VPN and other L2 tunneling technology
 
 Visit us at [http://www.centecnetworks.com] [1] 
 
