@@ -96,7 +96,7 @@ The Centec VCOS is able to boot from Debian Linux system rather than the basic L
  this gives user great flexibility to customize the switch operating system and able to 
  install/run your own software.
 A prepared Debian Linux rootfs (created by tool 'debootstrap' based on Debian 7.2) 
-is located in 'system/debian/rootfs.tar.gz' (Due to GitHub single file 100Mb limit, we put this
+is located in 'top/debian/rootfs.tar.gz' (Due to GitHub single file 100Mb limit, we put this
 file to dropbox, you can download it from https://www.dropbox.com/s/rx8ex9lve2fmafd/rootfs.tar.gz), 
 user need to untar the rootfs file into a USB storage (mounting on '/mnt/udisk' on the switch).
 
