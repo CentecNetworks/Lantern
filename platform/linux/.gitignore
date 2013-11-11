@@ -30,6 +30,9 @@
 *.patch
 *.gcno
 
+!/usr/g24eu.bit.gz
+!/usr/humberdemo.bit.gz
+
 #
 # Top-level generic files
 #
