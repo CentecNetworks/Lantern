@@ -2,19 +2,20 @@
 
 
 ##Overview
-"Lantern", the Industrial First Open Source Hardware Based Openflow Switch Implementation. 
+Lantern __BOLD__ is an open source implementation targeted at hardware based SDN switch, integrating Linux Debian 7.2 OS, Open vSwitch(OVS) with silicon SDK and adaption layer as an open source turnkey solution. 
 
-Lantern is an open source implementation targeted at hardware based openflow switch, integrating Linux Debian 7.2 OS, Open vSwitch(OVS) with open source silicon SDK and adaption layer as a complte solution. SDN is a new approach to networking in which network control is decoupled from the data forwarding function and is directly programmable. One key techbology for SDN is Openflow. Implementing SDN via an open standard enables extraordinary agility while reducing service development and operational costs. Centec's Lantern release is intended to fuel the open, collaborative development process, facilitating research and development via a complete turnkey solution.  
+SDN is a new approach to networking of which OpenFlow is one of the key technologies. Implementing SDN via an open standard enables extraordinary agility while reducing service development and operational costs. The complete open source release including silicon SDK and adaption layer facilitates research activity in the field. It also enables equipment vendors to further innovate on top of the turnkey solution. Furthermore, Lantern release is intended to contribute to the open eco-system which is crucial to SDN development in the industry. 
 
-Lantern running at a high-performance development platform, V330-52TX-RD, integrated with the most popular open source OVS stack. It can inter-operate with all mainstream OpenFlow controllers via the standard compliant OpenFlow interface on OVS. The development platform provides 48*1GE RJ45 network ports and 4*10GE SFP+ uplink ports with abundant OpenFlow features and the flexible editing capacity on packet and programmable match fields.
-V330-52TX-RD Development Platform Highlights:
-* Support 2.5K embedded flow entries with complete match field and stats
-* Support complete L2 to L4 match fields
-* Support per flow multiple actions
-* Support NvGRE, MPLS L2 VPN and other L2 tunneling technology
+Lantern release include source code of Debian Linux as platform OS, modified Open vSwitch(OVS) as openflow agent, as well as silicon SDK and adaption layer. In conjunction with the release, it includes development guide and compilation scripts. Lantern features:
+* OpenFlow 1.0 interoperating with mainstream OpenFlow controllers
+* 2.5K embedded flow entries with complete match field and stats
+* Complete L2 to L4 match fields
+* Flexible editing L2-L4 fields.such as rewriting MAC DA/MAC SA/l4port/IP
+* Popular tunnel overlay technology such as L2 over GRE, QinQ
 
-Visit us at [http://www.centecnetworks.com] [1] 
+Combined with Lantern release is a high-performance development platform, V330-52TX-RD, powered by Centec's SDN optimized switch silicon. V330-52TX-RD is a product level development platform with 48*1GE RJ45 network ports and 4*10GE SFP+ uplink ports. The development system can be purchased by E-commerce at Amazon.com.
 
+Visit us at [http://www.centecnetworks.com] [1]
 
 ##Main features
 * Support Centec Openflow hardware switching system: V330 52TX-RD.
