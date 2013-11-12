@@ -2,20 +2,18 @@
 
 
 ##Overview
-Lantern __BOLD__ is an open source implementation targeted at hardware based SDN switch, integrating Linux Debian 7.2 OS, Open vSwitch(OVS) with silicon SDK and adaption layer as an open source turnkey solution. 
+__Lantern__ is an open source implementation targeted at hardware based SDN switch, integrating Linux Debian 7.2 OS, Open vSwitch(OVS) with silicon SDK and adaption layer as an open source turnkey solution. 
 
-SDN is a new approach to networking of which OpenFlow is one of the key technologies. Implementing SDN via an open standard enables extraordinary agility while reducing service development and operational costs. The complete open source release including silicon SDK and adaption layer facilitates research activity in the field. It also enables equipment vendors to further innovate on top of the turnkey solution. Furthermore, Lantern release is intended to contribute to the open eco-system which is crucial to SDN development in the industry. 
+SDN is a new approach to networking of which OpenFlow is one of the key technologies. Implementing SDN via an open standard enables extraordinary agility while reducing service development and operational costs. The complete open source release including silicon SDK and adaption layer facilitates research activity in the field. It also enables equipment vendors to further innovate on top of the turnkey solution. Furthermore, __Lantern__ release is intended to contribute to the open eco-system which is crucial to SDN development in the industry. 
 
-Lantern release include source code of Debian Linux as platform OS, modified Open vSwitch(OVS) as openflow agent, as well as silicon SDK and adaption layer. In conjunction with the release, it includes development guide and compilation scripts. Lantern features:
+__Lantern__ release include source code of Debian Linux as platform OS, modified Open vSwitch(OVS) as openflow agent, as well as silicon SDK and adaption layer. In conjunction with the release, it includes development guide and compilation scripts. __Lantern__ features:
 * OpenFlow 1.0 interoperating with mainstream OpenFlow controllers
 * 2.5K embedded flow entries with complete match field and stats
 * Complete L2 to L4 match fields
 * Flexible editing L2-L4 fields.such as rewriting MAC DA/MAC SA/l4port/IP
 * Popular tunnel overlay technology such as L2 over GRE, QinQ
 
-Combined with Lantern release is a high-performance development platform, V330-52TX-RD, powered by Centec's SDN optimized switch silicon. V330-52TX-RD is a product level development platform with 48*1GE RJ45 network ports and 4*10GE SFP+ uplink ports. The development system can be purchased by E-commerce at Amazon.com.
-
-Visit us at [http://www.centecnetworks.com] [1]
+Combined with __Lantern__ release is a high-performance development platform, V330-52TX-RD, powered by Centec's SDN optimized switch silicon. V330-52TX-RD is a product level development platform with 48*1GE RJ45 network ports and 4*10GE SFP+ uplink ports. The development system can be purchased by E-commerce at Amazon.com.
 
 ##Main features
 * Support Centec Openflow hardware switching system: V330 52TX-RD.
@@ -28,7 +26,7 @@ Visit us at [http://www.centecnetworks.com] [1]
 * Support boot from Debian Linux system (Debian Linux 7.2 is embedded) 
 
 
-##How to build the system image and Open vSwitch package
+##System image and Open vSwitch package build guide
 The Virtual Centec Operating System (VCOS) image and Open vSwitch package can be built with GNU toolchain.
 
 Please refer to 'BUILD-GUIDE' for details. 
@@ -36,13 +34,12 @@ Please refer to 'BUILD-GUIDE' for details.
 
 ##License
 
-| Package                       | Version                      | License  |
-|:------------------------------|:-----------------------------|:---------|
-| Centec openflow adapter layer | 1.0                          | Apache 2 |
-| Centec Humber SDK             | 2.0.4                        | Apache 2 |
-| Open vSwitch                  | 1.10.0                       | Apache 2 |
-| Linux Kernel                  | 2.6.32.23                    | GPL      |
-| Busybox                       | 1.6.1                        | GPL      |
+| Package                             | Version                      | License  |
+|:------------------------------------|:-----------------------------|:---------|
+| Centec openflow adapter layer & SDK | 1.0                          | Apache 2 |
+| Open vSwitch                        | 1.10.0                       | Apache 2 |
+| Linux Kernel                        | 2.6.32.23                    | GPL      |
+| Busybox                             | 1.6.1                        | GPL      |
 
 Please refer to 'LICENSE' for details.
 
