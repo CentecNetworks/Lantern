@@ -26,7 +26,7 @@ Combined with __Lantern__ release is a high-performance development platform, V3
 * Support boot from Debian Linux system (Debian Linux 7.2 is embedded) 
 
 
-##System image and Open vSwitch package build guide
+##System image and Open vSwitch package
 The Virtual Centec Operating System (VCOS) image and Open vSwitch package can be built with GNU toolchain.
 
 Please refer to 'BUILD-GUIDE' for details. 
@@ -57,8 +57,10 @@ Leveraging Centec's TransWarp Family of Ethernet Silicon, Centec's E series swit
    * Support email: <support@centecnetworks.com>
    * Sales email: <sales@centecnetworks.com>
    * Weibo: [http://weibo.com/centec] [4]
+   * Mailing list: [https://lists.sourceforge.net/lists/listinfo/lantern-project-discuss] [5]
 
 [1]: http://www.centecnetworks.com "Centec Networks Co., Ltd."
 [2]: https://github.com/centecnetworks/lantern/wiki "Lantern Project Wiki"
 [3]: https://github.com/centecnetworks/lantern/issues "Lantern Project Issues"
 [4]: http://weibo.com/centec "Centec Weibo"
+[5]: https://lists.sourceforge.net/lists/listinfo/lantern-project-discuss "Mailing list for Lantern project"
