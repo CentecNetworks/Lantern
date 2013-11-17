@@ -4,16 +4,16 @@
 ##Overview
 __Lantern__ is an open source implementation targeted at hardware based SDN switch, integrating Linux Debian 7.2 OS, Open vSwitch(OVS) with silicon SDK and adaption layer as an open source turnkey solution. 
 
-SDN is a new approach to networking of which OpenFlow is one of the key technologies. Implementing SDN via an open standard enables extraordinary agility while reducing service development and operational costs. The complete open source release including silicon SDK and adaption layer facilitates research activity in the field. It also enables equipment vendors to further innovate on top of the turnkey solution. Furthermore, __Lantern__ release is intended to contribute to the open eco-system which is crucial to SDN development in the industry. 
+SDN is a new approach to networking of which OpenFlow is one of the key technologies. Implementing SDN via an open standard enables extraordinary agility while reducing service development and operational costs. The complete open source release including silicon SDK and adaption layer facilitates research activity in the field. It also enables equipment vendors to further innovate on top of the turnkey solution. Furthermore, Lantern release is intended to contribute to the open eco-system which is crucial to SDN development in the industry. 
 
-__Lantern__ release include source code of Debian Linux as platform OS, modified Open vSwitch(OVS) as openflow agent, as well as silicon SDK and adaption layer. In conjunction with the release, it includes development guide and compilation scripts. __Lantern__ features:
+Lantern release include source code of Debian Linux as platform OS, modified Open vSwitch(OVS) as openflow agent, as well as silicon SDK and adaption layer. In conjunction with the release, it includes development guide and compilation scripts. Lantern features:
 * OpenFlow 1.0 interoperating with mainstream OpenFlow controllers
 * 2.5K embedded flow entries with complete match field and stats
 * Complete L2 to L4 match fields
 * Flexible editing L2-L4 fields.such as rewriting MAC DA/MAC SA/l4port/IP
 * Popular tunnel overlay technology such as L2 over GRE, QinQ
 
-Combined with __Lantern__ release is a high-performance development platform, V330-52TX-RD, powered by Centec's SDN optimized switch silicon. V330-52TX-RD is a product level development platform with 48*1GE RJ45 network ports and 4*10GE SFP+ uplink ports. The development system can be purchased by E-commerce at Amazon.com.
+Combined with Lantern release is a high-performance development platform, V330-52TX-RD, powered by Centec's SDN optimized switch silicon. V330-52TX-RD is a product level development platform with 48*1GE RJ45 network ports and 4*10GE SFP+ uplink ports. The development system can be purchased by E-commerce at Amazon.com.
 
 ##Main features
 * Support Centec Openflow hardware switching system: V330 52TX-RD.
@@ -44,11 +44,11 @@ Please refer to 'BUILD-GUIDE' for details.
 Please refer to 'LICENSE' for details.
 
 ##About Centec Networks
-Centec Networks is a technology leader providing high-speed carrier-grade IP/Ethernet switching silicon and advanced ODM/OEM system solutions. Since 2005, Centec has delivered a series of silicon (TransWarp Series) and system products, covering a wide range of carrier access and aggregation market.
+__Centec Networks__ is pioneering to provide switching silicon and whitebox solution for SDN. We commit to enable SDN into networks of carrier, enterprise and data center. Leveraging the high performance open SDN architecture, Centec enables customer networks seamlessly migrate from traditional L2, L3 and MPLS/MPLS-TP architecture to the new SDN track. Together with the customer, Centec is redefining the switching network with optimized investment and more opening capability to create value for future and today.
 
-Since the inception of the company, Centec has gradually formed a complete family of TransWarp Ethernet series silicon. In 2013, Centec launched the third-generation switching Silicon GreatBelt Series, integrates Layer 2 through Layer 4 packet-processing engine and advanced traffic manager.The GreatBelt series Ethernet silicon can widely be applied to Metro, Enterprise, NID, SDN, PTN/IP RAN, and so on. Also SDK and EADP are available for low cost and shorten the Time-to-Marketing of customer's products. In order to provide the maximum convenience and value to custom,Centec has been cooperated with leading PHY vendor LSI, to provide a competitive turnkey solution of switching device.
+Since the inception of the company, Centec has gradually formed a complete family of TransWarpTM Ethernet switching silicon. In 2013, Centec launched the SDN optimized switching Silicon GreatBelt Series which redefines cost, power and price for Ethernet Switching. To bring the top convenience and value to OEMs, Centec has been cooperated with leading PHY and CPU vendors, to provide a competitive total solution for switching device.
 
-Leveraging Centec's TransWarp Family of Ethernet Silicon, Centec's E series switch perfectly support the plenty features of Metro-E to provide rich Ethernet services. Centec has been cooperating with leading PHY and CPU vendors to offer one-step solution and service for short Time-to-Marketing. What's more, V Series Switches, the leading industry OpenFlow switches, are integrated with the open source Open vSwitch and Centec's SDK to provide a complete system solution. Centec's cutting-edge silicon products and system solutions enable telecom/network equipment vendors to build complete product portfolios with dramatically reduced development costs and rapidly improved time-to-market.
+Built on TransWarpTM Family core silicon, Centec's V Series Switches, the leading industry SDN switches with OVS and Open SDK integrated, provide a complete SDN whitebox solution for Datacenter, Enterprise and Carriers applications. As a high performance open physical SDN switch, it brightens the way to migrate the traditional L2/L3/MPLS/MPLS-TP network to the new SDN blueprint.
 
 ##Contact us
    * Website: [http://www.centecnetworks.com] [1]
