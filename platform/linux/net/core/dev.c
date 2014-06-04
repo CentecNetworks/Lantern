@@ -4472,6 +4472,8 @@ int dev_ioctl(struct net *net, unsigned int cmd, void __user *arg)
 	int ret;
 	char *colon;
 
+    /* modified by kcao 2014-03-18 for bug 26997, fix kernel net module lock problem for net.count overflow */
+#if 0
 	/* One special case: SIOCGIFCONF takes ifconf argument
 	   and requires shared lock, because it sleeps writing
 	   to user space.
@@ -4501,6 +4503,10 @@ int dev_ioctl(struct net *net, unsigned int cmd, void __user *arg)
     {
         tmp_net = net;
     }
+#else
+    struct net *tmp_net = NULL;
+    tmp_net = net;
+#endif
 
 	if (cmd == SIOCGIFCONF) {
 		rtnl_lock();
@@ -4510,12 +4516,12 @@ int dev_ioctl(struct net *net, unsigned int cmd, void __user *arg)
 	}
 	if (cmd == SIOCGIFNAME)
 		return dev_ifname(tmp_net, (struct ifreq __user *)arg);
-#if 0 /* d by zhuj at 2011.01.12 for fixing dev ioctl problem when the dev is not in vrf 0 */
+
 	if (copy_from_user(&ifr, arg, sizeof(struct ifreq)))
 		return -EFAULT;
 
 	ifr.ifr_name[IFNAMSIZ-1] = 0;
-#endif
+
 	colon = strchr(ifr.ifr_name, ':');
 	if (colon)
 		*colon = 0;

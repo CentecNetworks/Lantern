@@ -1,3 +1,8 @@
+v1.0.1 - 4 Jun 2014
+-----------------
+   - fix kernel/netdev bugs
+
+
 v1.0 - 8 Nov 2013
 -----------------
    - First release of Centec VCOS-1.0 for V330 52TX-RD
@@ -10,4 +15,5 @@ v1.0 - 8 Nov 2013
     - Support flow priority, cookie, idle_timeout and hard_timeout
     - Support multiple actions: drop, output (physical port, all, in_port, controller, gre tunnel port), mod_vlan_id, push_vlan, strip_vlan, mod_dl_src, mod_dl_dst, set_tunnel_id, mod_nw_dst, mod_tp_dst
     - Support GRE tunnel port
-    - Support boot from Debian Linux system (Debian Linux 7.2 rootfs is embedded) 
+
+

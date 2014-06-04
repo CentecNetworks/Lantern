@@ -42,7 +42,7 @@ export LCADPT_H_DIR=$(CENTEC_PRIVATE_DIR)/lc/lcadpt/include
 export THIRD_PARTY_DIR=$(TOP_DIR)/third_party
 export PRE_BUILT_DIR=$(TOP_DIR)/prebuilt
 export PRE_BUILT_LIB_DIR=$(PRE_BUILT_DIR)/lib
-export OS_NAME=VCOS-1.0.bin
+export OS_NAME=VCOS-1.0.1.bin
 
 export CTCLIBROOT=$(OUT_DIR)/build.$(CPU).$(VER)/lib
 export OVSROOT=$(TOP_DIR)/ovs
