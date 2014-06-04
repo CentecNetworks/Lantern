@@ -17,7 +17,7 @@ To compile the VCOS distribution, you will need the following system and softwar
     - A make program, eg. GNU make
     - The GNU Toolchain 4.7.3 (cross toolchain for MIPS)
         We have tested with Sourcery CodeBench Lite 2013.05-66. for mips
-        (http://www.mentor.com/embedded-software/sourcery-tools/sourcery-codebench/editions/lite-edition/)
+        (http://www.mentor.com/embedded-software/sourcery-tools/sourcery-codebench/editions/lite-edition/mips-gnu-linux.html)
         You may refer to Mentor Graphics (www.mentor.com) for more details.
     - Install the LZMA compression tool
         We have tested with lzma 4.32.7.
