@@ -27,7 +27,7 @@ extern uint8 g_current_SerialNo[MAX_BOOTROM_VER_LEN + 1];
 #define OPENFLOW_HW_MFR_DESC "Centec Networks Inc., (SIP, Suzhou, China)"
 #define OPENFLOW_HW_DESC "V330-52TX-RD"
 #define OPENFLOW_CTC_VERSION_STR "Centec VCOS"
-#define OPENFLOW_CTC_VERSION          "1.0.1"
+#define OPENFLOW_CTC_VERSION          "1.0.2"
 #define OPENFLOW_CTC_DP_DESC "ASIC based data plane  "
 #define OPENFLOW_CTC_SERIAL_DESC g_current_SerialNo
 #define CLI_OFP_COPYRIGHT_INFO "Copyright (C) 2013 Centec Networks Inc.  All rights reserved."
