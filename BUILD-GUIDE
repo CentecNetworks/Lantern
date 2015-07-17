@@ -157,3 +157,6 @@ You may follow the procedures below to build Open vSwitch running on Debian syst
         
     On successful installation, the ovs tools will be installed in directory '/usr/local/openvswitch',
     and ovs will be run automatically on next boot.
+    
+    There is also a prebuilt package in the source path prebuilt/image/open_vswitch.tar.gz, user can use
+    it to install ovs package directly if they do not want to build from source.
