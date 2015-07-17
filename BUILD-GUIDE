@@ -110,9 +110,6 @@ Note:
     in on-board flash (mounting on '/mnt/flash'), then reboot.
     eg.
         % touch /mnt/flash/debian_from_udisk
-    
-    Please refer to V330 52TX-RD hardware installation guide for details of 
-    how to boot the system image.
              
     4. By default, we have created two accounts in the prepared Debian system package:
 
