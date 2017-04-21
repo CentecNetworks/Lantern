@@ -34,6 +34,9 @@ EXPORT_SYMBOL(memmove);
 
 EXPORT_SYMBOL(kernel_thread);
 
+EXPORT_SYMBOL(clear_page);
+EXPORT_SYMBOL(copy_page);
+
 /*
  * Userspace access stuff.
  */
